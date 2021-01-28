@@ -1,7 +1,3 @@
-import api from './api';
-import { supportedAssets } from './constants';
+export * from './api';
+export { supportedAssets } from './constants';
 
-export default {
-  ...api,
-  supportedAssets,
-};

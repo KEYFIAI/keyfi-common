@@ -17,16 +17,14 @@ const getWhitelistAddress = async (web3) => {
   return address;
 };
 
-export default {
-  async isWhitelisted(address = null) {
-    const web3 = await getWeb3();
+export const isWhitelisted = async (address = null) => {
+  const web3 = await getWeb3();
 
-    if (!address) {
-      address = getCurrentAccountAddress(web3);
-    }
-
-    const contractAddress = await getWhitelistAddress(web3);
-    const contract = new web3.eth.Contract(whitelistAbi, contractAddress);
-    return contract.methods.isWhitelisted(address).call();
+  if (!address) {
+    address = getCurrentAccountAddress(web3);
   }
+
+  const contractAddress = await getWhitelistAddress(web3);
+  const contract = new web3.eth.Contract(whitelistAbi, contractAddress);
+  return contract.methods.isWhitelisted(address).call();
 }

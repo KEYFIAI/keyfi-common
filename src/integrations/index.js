@@ -1,26 +1,10 @@
-import aave from "./aave";
-import * as airdrop from "./airdrop";
-import * as common from "./common";
-import * as dydx from "./dydx";
-import * as compound from "./compound";
-import * as curve from "./curve";
-import * as keyfipool from "./keyfipool";
-import * as uniswap from "./uniswap";
-import inch from "./1inch";
-import whitelist from "./whitelist";
-
-export default {
-  // Services
-  aave,
-  airdrop,
-  compound,
-  curve,
-  dydx,
-  keyfipool,
-  inch,
-  uniswap,
-  whitelist,
-
-  // // Helpers
-  ...common,
-};
+export * as inch from "./1inch";
+export * as aave from "./aave";
+export * as airdrop from "./airdrop";
+export * as dydx from "./dydx";
+export * as compound from "./compound";
+export * as curve from "./curve";
+export * as keyfipool from "./keyfipool";
+export * as uniswap from "./uniswap";
+export * as whitelist from "./whitelist";
+export * from "./common";

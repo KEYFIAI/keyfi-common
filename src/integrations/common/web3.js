@@ -3,9 +3,9 @@ import BigNumber from "bignumber.js";
 import Web3 from "web3";
 import { networkNames } from "./constants";
 import Erc20Abi from "./erc20.abi.json";
-import { WalletProviderId } from "../../../redux/walletSlice";
+import { WalletProviderId } from "../../constants";
 import { loadMetamaskEvents, loadWalletConnectEvents } from "./web3Events";
-import { isMobile } from "../../../helpers/utils";
+import { isMobile } from "../../utils";
 
 export const createWeb3InNodeJS = () => {
   const ethereumNodeUrl = process.env.ETHEREUM_HTTP_PROVIDER;
@@ -106,10 +106,10 @@ async function creatSelfKeyWeb3() {
 
   localStorage.setItem('WALLETCONNECT_DEEPLINK_CHOICE', JSON.stringify({
     name: 'SelfKey',
-    href: getSelfkeyDeeplink() 
+    href: getSelfkeyDeeplink()
   }));
   await provider.enable();
-  
+
   if (!isMobile()){
     const web3 = new Web3(provider);
     web3.eth.defaultAccount = provider.accounts[0];

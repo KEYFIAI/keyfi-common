@@ -8,7 +8,7 @@ export const Web3Events = {
 
 let eventsLoaded = {};
 
-export function loadMetamaskEvents(web3) {  
+export function loadMetamaskEvents(web3) {
   if (eventsLoaded['metamask']) {
     return;
   }
@@ -23,7 +23,7 @@ export function loadMetamaskEvents(web3) {
 }
 
 
-export function loadWalletConnectEvents(provider) {  
+export function loadWalletConnectEvents(provider) {
   if (eventsLoaded['walletConnect']) {
     return;
   }
