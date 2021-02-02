@@ -25,6 +25,16 @@ export const createWeb3InNodeJS = () => {
   return web3;
 };
 
+export async function createInfuraWeb3() {
+  const infuraKey = process.env.REACT_APP_INFURA_KEY;
+  if (!infuraKey) {
+    throw new Error("REACT_APP_INFURA_KEY is not specified!");
+  }
+
+  const infuraUrl = `https://mainnet.infura.io/v3/${infuraKey}`;
+  return new Web3(infuraUrl);
+}
+
 export async function createMetamaskWeb3() {
   if (!window.ethereum) {
     throw new Error("There is no 'window.ethereum'. Do you have MetaMask?");
@@ -139,6 +149,10 @@ async function creatSelfKeyWeb3() {
 }
 
 export const createWeb3InBrowser = (providerId) => {
+  if (providerId === WalletProviderId.Infura) {
+    return createInfuraWeb3();
+  }
+
   if (providerId === WalletProviderId.Metamask) {
     return createMetamaskWeb3();
   }
@@ -179,7 +193,7 @@ export const getWeb3 = async (providerId, init) => {
   return _web3;
 };
 
-export const resetWeb3 = ()=>{
+export const resetWeb3 = () => {
   _web3 = null;
 }
 
