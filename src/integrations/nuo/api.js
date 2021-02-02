@@ -2,7 +2,7 @@ import reserveAbi from './abi/reserve.abi.json';
 import { tokens, reserveAddress } from './constants';
 import { createWeb3InNodeJS, createWeb3InBrowser } from '../common/web3';
 
-export default {
+const nuoApi = {
   async getWeb3() {
     if (this._web3) {
       return this._web3;
@@ -66,3 +66,4 @@ export default {
   },
 };
 
+export default nuoApi;

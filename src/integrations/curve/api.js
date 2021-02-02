@@ -7,7 +7,6 @@ import {
   getTrxOverrides,
   getNetwork,
   getWeb3,
-  normalizeAmount,
   erc20Abi,
   denormalizeAmount,
 } from '../common';
