@@ -1,5 +1,5 @@
 {
-  "name": "keyfi-common",
+  "name": "@keyfi/keyfi-common",
   "version": "0.0.1",
   "main": "src/index.js",
   "scripts": {
