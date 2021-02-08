@@ -53,8 +53,7 @@ export async function createMetamaskWeb3() {
 
 export async function createWalletConnectWeb3() {
   const provider = new WalletConnectProvider({
-    // TODO: Need to create an ENV variable for it
-    infuraId: "42c72df6422e4bc4847f137125953bc2",
+    infuraId: process.env.REACT_APP_INFURA_KEY,
   });
 
   // provider.disconnect();
@@ -101,7 +100,7 @@ async function creatSelfKeyWeb3() {
     localStorage.setItem('walletconnect', null);
   }
   const provider = new WalletConnectProvider({
-    infuraId: "42c72df6422e4bc4847f137125953bc2",
+    infuraId: process.env.REACT_APP_INFURA_KEY,
     qrcode: false,
   });
 
