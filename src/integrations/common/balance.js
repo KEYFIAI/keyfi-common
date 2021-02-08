@@ -10,7 +10,7 @@ import { denormalizeAmount } from './math';
 import { coingeckoAssetsIds, erc20Addresses } from './constants';
 import erc20Abi from './erc20.abi.json';
 
-const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
+export const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
   let assetsOrAddresses = assetOrAssets;
   if (typeof assetsOrAddresses === 'string') {
     assetsOrAddresses = [assetsOrAddresses];
@@ -75,7 +75,7 @@ const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
   return results;
 };
 
-const getBalanceEth = async (holderAddress) => {
+export const getBalanceEth = async (holderAddress) => {
   const web3 = await getWeb3();
 
   if (!holderAddress) {
@@ -88,7 +88,7 @@ const getBalanceEth = async (holderAddress) => {
 
 const ZERO_USD_PRICE_TOKENS = ['KEYFI', 'KEYFIUSDCLP'];
 
-const getUsdPrice = async (assetOrAssets) => {
+export const getUsdPrice = async (assetOrAssets) => {
   let assets = assetOrAssets;
   if (typeof assetOrAssets === 'string') {
     assets = [assets];
@@ -132,8 +132,30 @@ const getUsdPrice = async (assetOrAssets) => {
   }, {});
 };
 
-export {
-  getBalanceErc20,
-  getBalanceEth,
-  getUsdPrice,
+export const getKeyfiUsdPrice = async () => {
+  const response = await axios.post(
+    `https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2`,
+    {
+      query: `
+        {
+          tokenDayDatas(first: 1, orderBy: date, orderDirection: desc, where: {
+            token: "0xb8647e90c0645152fccf4d9abb6b59eb4aa99052"
+          }) {
+            id date token {
+              id symbol
+            }
+            priceUSD
+          }
+        }
+      `
+    }
+  );
+
+  const keyfiData = response.data.data.tokenDayDatas[0];
+
+  if (!keyfiData) {
+    throw new Error("Didn't find KEYFI token in graphql query result!");
+  }
+
+  return Number.parseFloat(keyfiData.priceUSD, 10);
 };
