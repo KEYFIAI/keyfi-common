@@ -52,7 +52,7 @@ export const getBalance = async (accountAddress = null) => {
       assetAddress,
     ).call();
 
-    balances[asset] = assetBalance;
+    balances[asset] = denormalizeAmount(asset, assetBalance);
   }
 
   return balances;
@@ -140,8 +140,6 @@ export const withdraw = async (asset, amount, options = {}) => {
 }
 
 export const withdrawReward = async (asset, options = {}) => {
-
-
   const web3 = await getWeb3();
 
   const assetAddress = await getContractAddress(web3, asset);
@@ -206,7 +204,7 @@ export const getRewards = async (accountAddress = null) => {
       accountAddress,
     ).call();
 
-    rewards[asset] = assetReward;
+    rewards[asset] = denormalizeAmount(asset, assetReward);
   }
 
   return rewards;
