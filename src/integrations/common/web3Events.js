@@ -8,7 +8,7 @@ export const Web3Events = {
 
 let eventsLoaded = {};
 
-export function loadMetamaskEvents(web3) {
+export function loadMetamaskEvents() {
   if (eventsLoaded['metamask']) {
     return;
   }

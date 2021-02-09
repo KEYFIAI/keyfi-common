@@ -1,8 +1,8 @@
-import rewardPoolAbi from "./reward-pool.abi.json"
+import rewardPoolAbi from './reward-pool.abi.json';
 import {
   contractAddresses,
   supportedAssets,
-  supportedNetworks
+  supportedNetworks,
 } from './constants';
 import {
   approveErc20IfNeeded,
@@ -12,6 +12,7 @@ import {
   getTrxOverrides,
   getWeb3,
   normalizeAmount,
+  denormalizeAmount,
 } from '../common';
 
 const GAS_LIMIT = 250000;
@@ -34,7 +35,6 @@ const getContractAddress = async (web3, contractName) => {
 };
 
 export const getBalance = async (accountAddress = null) => {
-
   const web3 = await getWeb3();
 
   if (!accountAddress) {
@@ -56,9 +56,7 @@ export const getBalance = async (accountAddress = null) => {
   }
 
   return balances;
-
-}
-
+};
 
 export const deposit = async (asset, amount, options = {}) => {
   const nAmount = normalizeAmount(asset, amount);
@@ -85,13 +83,12 @@ export const deposit = async (asset, amount, options = {}) => {
         platform: PENDING_CALLBACK_PLATFORM,
         assets: [{
           symbol: asset,
-          amount: amount,
+          amount,
         }],
-      }
+      },
     },
   );
 
-  console.log("DEPOSIT", asset, assetAddress, nAmount);
   return poolContract.methods.deposit(assetAddress, nAmount).send(
     {
       from: getCurrentAccountAddress(web3),
@@ -104,14 +101,14 @@ export const deposit = async (asset, amount, options = {}) => {
       type: 'deposit',
       assets: [{
         symbol: asset,
-        amount: amount,
+        amount,
       }],
     }),
   );
-}
+};
 
 export const withdraw = async (asset, amount, options = {}) => {
-   const nAmount = normalizeAmount(asset, amount);
+  const nAmount = normalizeAmount(asset, amount);
 
   const web3 = await getWeb3();
 
@@ -120,7 +117,6 @@ export const withdraw = async (asset, amount, options = {}) => {
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
   const trxOverrides = getTrxOverrides(options);
 
-  console.log("WITHDRAW", asset, assetAddress, nAmount);
   return poolContract.methods.withdraw(assetAddress, nAmount).send(
     {
       from: getCurrentAccountAddress(web3),
@@ -133,11 +129,11 @@ export const withdraw = async (asset, amount, options = {}) => {
       type: 'withdraw',
       assets: [{
         symbol: asset,
-        amount: amount,
+        amount,
       }],
     }),
   );
-}
+};
 
 export const withdrawReward = async (asset, options = {}) => {
   const web3 = await getWeb3();
@@ -160,13 +156,12 @@ export const withdrawReward = async (asset, options = {}) => {
         callback: options.pendingCallback,
         platform: PENDING_CALLBACK_PLATFORM,
         assets: [{
-          symbol: asset
+          symbol: asset,
         }],
-      }
+      },
     },
   );
 
-  console.log("WITHDRAW_REWARDS", asset, assetAddress);
   return poolContract.methods.withdrawRewards(assetAddress).send(
     {
       from: getCurrentAccountAddress(web3),
@@ -182,8 +177,7 @@ export const withdrawReward = async (asset, options = {}) => {
       }],
     }),
   );
-
-}
+};
 
 export const getRewards = async (accountAddress = null) => {
   const web3 = await getWeb3();
@@ -208,4 +202,4 @@ export const getRewards = async (accountAddress = null) => {
   }
 
   return rewards;
-}
+};

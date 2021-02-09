@@ -39,7 +39,7 @@ export const getContractAddress = async (web3, contractName) => {
   return address;
 };
 
-export const getBalance = async (accountAddress = null, options = {}) => {
+export const getBalance = async (accountAddress = null) => {
   const web3 = await getWeb3();
 
   if (!accountAddress) {

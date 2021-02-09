@@ -128,7 +128,7 @@ async function creatSelfKeyWeb3() {
     loadWalletConnectEvents(provider, provider.accounts[0]);
     return web3;
   }
-  return new Promise((res, rej) => {
+  return new Promise((resolve) => {
     let interval = setInterval(() => {
       if (provider.connected) {
         clearInterval(interval);
@@ -141,7 +141,7 @@ async function creatSelfKeyWeb3() {
 
         loadWalletConnectEvents(provider, provider.accounts[0]);
 
-        res(web3);
+        resolve(web3);
       }
     }, 1000);
   });

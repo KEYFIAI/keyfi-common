@@ -36,7 +36,7 @@ const getContractAddress = async (web3, contractName) => {
 };
 
 const api = {
-  async estimateSwap(fromAssetSymbol, fromAmount, toAssetSymbol, options = {}) {
+  async estimateSwap(fromAssetSymbol, fromAmount, toAssetSymbol) {
     fromAmount = normalizeAmount(fromAssetSymbol, fromAmount);
 
     const web3 = await getWeb3();

@@ -110,7 +110,6 @@ export const estimateSwap = async (
   fromAssetSymbol,
   fromAmount,
   toAssetSymbol,
-  options = {},
 ) => {
   fromAmount = normalizeAmount(fromAssetSymbol, fromAmount);
 

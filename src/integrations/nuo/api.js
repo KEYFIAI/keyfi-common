@@ -26,11 +26,11 @@ const nuoApi = {
     return String(Number.parseFloat(amount) * Math.pow(10, tokenInfo.decimal));
   },
 
-  async deposit(asset, amount) {
-  },
+  // async deposit(asset, amount) {
+  // },
 
-  async withdraw(asset, amount) {
-  },
+  // async withdraw(asset, amount) {
+  // },
 
   async getBalance(address = null) {
     const web3 = await this.getWeb3();
