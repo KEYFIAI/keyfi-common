@@ -1,6 +1,6 @@
 {
   "name": "@keyfi/keyfi-common",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "src/index.js",
   "scripts": {
     "lint": "eslint --fix --ignore-path .gitignore .",
