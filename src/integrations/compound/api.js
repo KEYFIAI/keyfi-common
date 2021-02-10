@@ -56,7 +56,7 @@ export const getBalance = async (accountAddress = null, options = {}) => {
 
   // Fetch cToken balances
   const balance = {};
-  const cTokensSymbols = options.cTokens || cTokens
+  const cTokensSymbols = options.cTokens || cTokens;
 
   for (const cTokenSymbol of cTokensSymbols) {
     const cTokenAddress = await getContractAddress(web3, cTokenSymbol);
@@ -77,7 +77,7 @@ export const getBalance = async (accountAddress = null, options = {}) => {
       balance[originalToken] = rateBN
         .shiftedBy(-EXCHANGE_RATE_DECIMALS)
         .multipliedBy(cTokenBalance)
-        .toFixed()
+        .toFixed();
     } else {
       balance[originalToken] = 0;
     }

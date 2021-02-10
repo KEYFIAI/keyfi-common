@@ -9,9 +9,9 @@ const getEnsProvider = async () => {
   }
 
   return ensProvider;
-}
+};
 
 export const resolveEns = async (ensAddress) => {
   const ens = await getEnsProvider();
   return ens.resolver(ensAddress).addr();
-}
+};

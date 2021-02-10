@@ -88,7 +88,7 @@ export const isPairAvailable = async (assetA, assetB) => {
   const pairs = availablePairs[name].map((x) => x.join(':'));
   const pairKey = [assetA, assetB].sort().join(':');
   return pairs.some(x => x === pairKey);
-}
+};
 
 export const getAvailablePairedAssets = async (assetA) => {
   const web3 = await getWeb3();
@@ -103,8 +103,8 @@ export const getAvailablePairedAssets = async (assetA) => {
     .filter(x => x[0] === assetA || x[1] === assetA)
     .map(pair => pair.filter(x => x !== assetA)[0]);
 
-  return Array.from(new Set(paired))
-}
+  return Array.from(new Set(paired));
+};
 
 export const estimateSwap = async (
   fromAssetSymbol,
@@ -268,8 +268,8 @@ export const getLiquidity = async (assetA, assetB, options = {}) => {
 
 export const getPrice = async (assetWhat, assetTo, options = {}) => {
   const liquidity = await getLiquidity(assetWhat, assetTo, options);
-  return BigNumber(liquidity[assetTo]).dividedBy(liquidity[assetWhat]).toFixed()
-}
+  return BigNumber(liquidity[assetTo]).dividedBy(liquidity[assetWhat]).toFixed();
+};
 
 export const getAccountLiquidity = async (
   assetA,

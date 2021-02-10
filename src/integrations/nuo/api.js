@@ -40,7 +40,7 @@ const nuoApi = {
     }
 
     const reserveContract = new web3.eth.Contract(reserveAbi, reserveAddress);
-    console.log('reserveAddress', reserveAddress)
+    console.log('reserveAddress', reserveAddress);
 
     const balances = {};
     await Promise.all(

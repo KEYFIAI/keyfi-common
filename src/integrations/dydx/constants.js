@@ -17,7 +17,7 @@ export const accountNumbers = {
 export const actionType = {
   Deposit: 0,
   Withdraw: 1,
-}
+};
 
 export const supportedAssets = ["ETH", "DAI", "USDC"];
 

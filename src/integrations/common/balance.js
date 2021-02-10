@@ -104,7 +104,7 @@ export const getUsdPrice = async (assetOrAssets) => {
     return {
       symbol,
       coingeckoId,
-    }
+    };
   });
 
   const response = await axios.get(

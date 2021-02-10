@@ -1,4 +1,4 @@
-import BigNumber from 'bignumber.js'
+import BigNumber from 'bignumber.js';
 import swapAbi from './swap.abi.json';
 import {
   approveErc20IfNeeded,
@@ -28,7 +28,7 @@ const addresses = {
     swap: '0xA2B47E3D5c44877cca798226B7B8118F9BFb7A56',
     token: '0x845838DF265Dcd2c412A1Dc9e959c7d08537f8a2',
   }
-}
+};
 
 const swapTokenSymbol = 'cDAI+cUSDC';
 
@@ -37,7 +37,7 @@ const assertSupportedChain = async (web3) => {
   if (network.name !== 'mainnet') {
     throw new Error(`Network chainId=${network.chainId} is not supported!`);
   }
-}
+};
 
 export const addLiquidity = async (
   assetA,
@@ -160,7 +160,7 @@ export const addLiquidity = async (
       })),
     }),
   );
-}
+};
 
 export const getBalance = async (accountAddress = null) => {
   const web3 = await getWeb3();
@@ -240,9 +240,9 @@ export const getBalance = async (accountAddress = null) => {
   // })
 
   return tokens.reduce((info, token) => {
-    info[token.symbol] = token.balance.toFixed()
-    return info
-  }, {})
+    info[token.symbol] = token.balance.toFixed();
+    return info;
+  }, {});
 };
 
 export const removeLiquidity = async (assetA, assetB, percent, options = {}) => {
@@ -286,14 +286,14 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
         .multipliedBy(asset.stakedRaw)
         .dividedBy(swapTokenSupply)
         .multipliedBy(1 - slippage)
-        .toFixed(0)
+        .toFixed(0);
     })
   );
 
   const swapTokenAmount = BigNumber(swapTokenBalance)
     .multipliedBy(percent)
-    .toFixed(0)
-  const minReturns = assets.map((token) => token.minReturn)
+    .toFixed(0);
+  const minReturns = assets.map((token) => token.minReturn);
 
   const trxOverrides = getTrxOverrides(options);
 
@@ -332,8 +332,8 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
         amount: denormalizeAmount(asset.symbol, asset.minReturn),
       })),
     }),
-  )
-}
+  );
+};
 
 export const getSupportedAssets = async () => {
   const web3 = await getWeb3();

@@ -3,7 +3,7 @@ import PubSub from 'pubsub-js';
 
 export const Web3Events = {
   accountsChanged: 'accountsChanged',
-}
+};
 
 
 let eventsLoaded = {};

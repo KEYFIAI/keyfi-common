@@ -202,7 +202,7 @@ export const withdraw = async (asset, amount, options = {}) => {
       otherAccountId: '0',
       data: [],
     }]
-  ]
+  ];
 
   if (asset === 'ETH') {
     sendArgs.push(accountAddress);

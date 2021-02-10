@@ -92,7 +92,7 @@ function getSelfkeyDeeplink() {
     protocol += '-dev';
   }
 
-  return `${protocol}://wallet-connect`
+  return `${protocol}://wallet-connect`;
 }
 
 async function creatSelfKeyWeb3() {
@@ -194,7 +194,7 @@ export const getWeb3 = async (providerId, init) => {
 
 export const resetWeb3 = () => {
   _web3 = null;
-}
+};
 
 export const approveErc20IfNeeded = async (
   web3,
