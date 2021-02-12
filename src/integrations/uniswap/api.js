@@ -21,8 +21,6 @@ import {
   normalizeAmount,
   denormalizeAmount,
   promisifyBatchRequest,
-  web3BatchRequest,
-  REQUEST_TYPE_CALL,
 } from '../common';
 
 const DEFAULT_MAX_SLIPPAGE = 0.005;
@@ -77,6 +75,9 @@ const getPairAddress = async (web3, assetAAddress, assetBAddress) => {
 };
 
 export const isPairAvailable = async (assetA, assetB) => {
+  assetA = assetA === 'ETH' ? 'WETH' : assetA;
+  assetB = assetB === 'ETH' ? 'WETH' : assetB;
+
   const web3 = await getWeb3();
   const { chainId } = await getNetwork(web3);
 
@@ -85,12 +86,13 @@ export const isPairAvailable = async (assetA, assetB) => {
     throw new Error(`Network with chainId=${chainId} is not supported!`);
   }
 
-  const pairs = availablePairs[name].map((x) => x.join(':'));
   const pairKey = [assetA, assetB].sort().join(':');
-  return pairs.some(x => x === pairKey);
+  return availablePairs[name].some(x => x.key === pairKey);
 };
 
-export const getAvailablePairedAssets = async (assetA) => {
+export const getAvailablePairedAssets = async (mainAsset) => {
+  mainAsset = mainAsset === 'ETH' ? 'WETH' : mainAsset;
+
   const web3 = await getWeb3();
   const { chainId } = await getNetwork(web3);
 
@@ -100,8 +102,19 @@ export const getAvailablePairedAssets = async (assetA) => {
   }
 
   const paired = availablePairs[name]
-    .filter(x => x[0] === assetA || x[1] === assetA)
-    .map(pair => pair.filter(x => x !== assetA)[0]);
+    .reduce((listOfPairedAssets, pair) => {
+      if (pair.assetA === mainAsset) {
+        listOfPairedAssets.push(pair.assetB);
+      } else if (pair.assetB === mainAsset) {
+        listOfPairedAssets.push(pair.assetA);
+      }
+
+      return listOfPairedAssets;
+    }, []);
+
+  if (paired.includes('WETH')) {
+    paired.push('ETH');
+  }
 
   return Array.from(new Set(paired));
 };
@@ -320,55 +333,28 @@ export const getAccountLiquidity = async (
 
 export const getAccountLiquidityAll = async (address = null) => {
   const web3 = await getWeb3();
+  const { chainId } = await getNetwork(web3);
+  const networkName = supportedNetworks[chainId];
+
+  if (!availablePairs[networkName]) {
+    throw new Error(
+      `Network chainId=${chainId}, name=${networkName} is not supported!`,
+    );
+  }
 
   if (!address) {
     address = getCurrentAccountAddress(web3);
   }
 
+  // 1st step - fetch account's liquidity on all available pairs
   const assets = await getSupportedAssetsMap();
-  const assetsPairs = [];
-  for (const asset of Object.keys(assets)) {
-    if (asset !== 'ETH' && asset !== 'WETH') {
-      assetsPairs.push(['ETH', asset]);
-    }
-  }
-
-  // 1st step - fetch all available pairs addresses
-  const factoryAddress = await getContractAddress(web3, 'Factory');
-  const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
-
-  const pairsAddresses = await web3BatchRequest(
-    web3,
-    factoryContract.methods.getPair,
-    REQUEST_TYPE_CALL,
-    assetsPairs.map(([assetA, assetB]) => [
-      assets[assetA === 'ETH' ? 'WETH' : assetA],
-      assets[assetB === 'ETH' ? 'WETH' : assetB],
-    ]),
-    null,
-    (error) => {
-      if (error.code === PAIR_NOT_EXISTS) {
-        return null;
-      }
-
-      throw error;
-    },
-  );
-
-  // 2nd step - fetch accounts liquidity on all available pairs
-  const availablePairs = assetsPairs.map(([assetA, assetB], index) => {
-    const pairAddress = pairsAddresses[index];
-
-    return {
-      assetA,
-      assetB,
-      pairAddress,
-      contract: new web3.eth.Contract(pairAbi, pairAddress),
-    };
-  }).filter(({ pairAddress }) => pairAddress !== NULL_ADDRESS);
+  const assetsPairs = availablePairs[networkName].map((pair) => ({
+    ...pair,
+    contract: new web3.eth.Contract(pairAbi, pair.address),
+  }));
 
   const batch1 = new web3.BatchRequest();
-  const promises1 = availablePairs.map(async (pair) => {
+  const promises1 = assetsPairs.map(async (pair) => {
     const balance = await promisifyBatchRequest(
       batch1,
       pair.contract.methods.balanceOf(address).call.request,
@@ -380,7 +366,7 @@ export const getAccountLiquidityAll = async (address = null) => {
   await Promise.all(promises1);
 
   // Fetch and calculate info for pairs with account liquidity
-  const pairsWithLiquidity = availablePairs.filter(
+  const pairsWithLiquidity = assetsPairs.filter(
     (pair) => pair.balance.gt(0),
   );
 

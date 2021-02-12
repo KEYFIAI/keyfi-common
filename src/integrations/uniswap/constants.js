@@ -41,42 +41,305 @@ export const supportedNetworks = {
   3: 'ropsten',
 };
 
-// Actual on 2020.12.12
+// Actual on 2020.02.12
 export const availablePairs = {
   'mainnet': [
-    [ 'BAT', 'DAI' ],     [ 'BAT', 'ETH' ],     [ 'BAT', 'USDC' ],
-    [ 'BAT', 'USDT' ],    [ 'BAT', 'WBTC' ],    [ 'BAT', 'WETH' ],
-    [ 'BUSD', 'DAI' ],    [ 'BUSD', 'ETH' ],    [ 'BUSD', 'USDC' ],
-    [ 'BUSD', 'USDT' ],   [ 'BUSD', 'WETH' ],   [ 'CHAI', 'DAI' ],
-    [ 'CHAI', 'ETH' ],    [ 'CHAI', 'WETH' ],   [ 'DAI', 'ETH' ],
-    [ 'DAI', 'TUSD' ],    [ 'DAI', 'USDC' ],    [ 'DAI', 'USDT' ],
-    [ 'DAI', 'WBTC' ],    [ 'DAI', 'WETH' ],    [ 'DAI', 'renBTC' ],
-    [ 'DAI', 'sUSD' ],    [ 'ETH', 'HBTC' ],    [ 'ETH', 'PAX' ],
-    [ 'ETH', 'TUSD' ],    [ 'ETH', 'USDC' ],    [ 'ETH', 'USDT' ],
-    [ 'ETH', 'WBTC' ],    [ 'ETH', 'renBTC' ],  [ 'ETH', 'sBTC' ],
-    [ 'ETH', 'sUSD' ],    [ 'HBTC', 'WBTC' ],   [ 'HBTC', 'WETH' ],
-    [ 'KEYFI', 'USDC' ],  [ 'PAX', 'TUSD' ],    [ 'PAX', 'USDC' ],
-    [ 'PAX', 'USDT' ],    [ 'PAX', 'WETH' ],    [ 'TUSD', 'USDC' ],
-    [ 'TUSD', 'USDT' ],   [ 'TUSD', 'WBTC' ],   [ 'TUSD', 'WETH' ],
-    [ 'USDC', 'USDT' ],   [ 'USDC', 'WBTC' ],   [ 'USDC', 'WETH' ],
-    [ 'USDC', 'renBTC' ], [ 'USDC', 'sUSD' ],   [ 'USDT', 'WBTC' ],
-    [ 'USDT', 'WETH' ],   [ 'USDT', 'sUSD' ],   [ 'WBTC', 'WETH' ],
-    [ 'WBTC', 'renBTC' ], [ 'WETH', 'renBTC' ], [ 'WETH', 'sBTC' ],
-    [ 'WETH', 'sUSD' ],
+    {
+      assetA: 'BAT',
+      assetB: 'WETH',
+      key: 'BAT:WETH',
+      address: '0xB6909B960DbbE7392D405429eB2b3649752b4838'
+    },
+    {
+      assetA: 'CHAI',
+      assetB: 'WETH',
+      key: 'CHAI:WETH',
+      address: '0x12EDE161c702D1494612d19f05992f43aa6A26FB'
+    },
+    {
+      assetA: 'DAI',
+      assetB: 'WETH',
+      key: 'DAI:WETH',
+      address: '0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'
+    },
+    {
+      assetA: 'USDC',
+      assetB: 'WETH',
+      key: 'USDC:WETH',
+      address: '0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'
+    },
+    {
+      assetA: 'USDT',
+      assetB: 'WETH',
+      key: 'USDT:WETH',
+      address: '0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852'
+    },
+    {
+      assetA: 'TUSD',
+      assetB: 'WETH',
+      key: 'TUSD:WETH',
+      address: '0xb4d0d9df2738abE81b87b66c80851292492D1404'
+    },
+    {
+      assetA: 'BUSD',
+      assetB: 'WETH',
+      key: 'BUSD:WETH',
+      address: '0xC2923b8a9683556A3640ccc2961B2F52B5C4459A'
+    },
+    {
+      assetA: 'WETH',
+      assetB: 'sUSD',
+      key: 'WETH:sUSD',
+      address: '0xf80758aB42C3B07dA84053Fd88804bCB6BAA4b5c'
+    },
+    {
+      assetA: 'PAX',
+      assetB: 'WETH',
+      key: 'PAX:WETH',
+      address: '0x598e7A017dAce2534Bc3F7496124C89425b1E165'
+    },
+    {
+      assetA: 'WETH',
+      assetB: 'renBTC',
+      key: 'WETH:renBTC',
+      address: '0x81FbEf4704776cc5bBa0A5dF3a90056d2C6900B3'
+    },
+    {
+      assetA: 'WBTC',
+      assetB: 'WETH',
+      key: 'WBTC:WETH',
+      address: '0xBb2b8038a1640196FbE3e38816F3e67Cba72D940'
+    },
+    {
+      assetA: 'HBTC',
+      assetB: 'WETH',
+      key: 'HBTC:WETH',
+      address: '0xA6F4EAE7FdaA20E632C45d4cd39E4f3961892322'
+    },
+    {
+      assetA: 'WETH',
+      assetB: 'sBTC',
+      key: 'WETH:sBTC',
+      address: '0xb749eDaC57278A86984692dD2aA1EE2aafCf5B45'
+    },
+    {
+      assetA: 'BAT',
+      assetB: 'DAI',
+      key: 'BAT:DAI',
+      address: '0x6929abD7931D0243777d3CD147fE863646A752ba'
+    },
+    {
+      assetA: 'BAT',
+      assetB: 'USDC',
+      key: 'BAT:USDC',
+      address: '0x02DD9Ff64EeC5D866a512EF08463C7c85A14e4Aa'
+    },
+    {
+      assetA: 'BAT',
+      assetB: 'USDT',
+      key: 'BAT:USDT',
+      address: '0x0c11F54ec778Cdf062Ad0d8464cC7b7C9108c934'
+    },
+    {
+      assetA: 'BAT',
+      assetB: 'WBTC',
+      key: 'BAT:WBTC',
+      address: '0x65cc29d2E912827e6C1A53A5d18A7c23c9D2920d'
+    },
+    {
+      assetA: 'CHAI',
+      assetB: 'DAI',
+      key: 'CHAI:DAI',
+      address: '0xF24D78Aad09Ab026aC5242E34C99200eEE3529Db'
+    },
+    {
+      assetA: 'DAI',
+      assetB: 'USDC',
+      key: 'DAI:USDC',
+      address: '0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5'
+    },
+    {
+      assetA: 'DAI',
+      assetB: 'USDT',
+      key: 'DAI:USDT',
+      address: '0xB20bd5D04BE54f870D5C0d3cA85d82b34B836405'
+    },
+    {
+      assetA: 'DAI',
+      assetB: 'TUSD',
+      key: 'DAI:TUSD',
+      address: '0xbdFa9eBFf5369bC10ff75b4a2FBfce8d5caf1024'
+    },
+    {
+      assetA: 'BUSD',
+      assetB: 'DAI',
+      key: 'BUSD:DAI',
+      address: '0x66DDD3B7d017A769cC0c702B937c230EBd3c72D6'
+    },
+    {
+      assetA: 'DAI',
+      assetB: 'sUSD',
+      key: 'DAI:sUSD',
+      address: '0x2B797191b77B7579a5c32027174d79AB7b725114'
+    },
+    {
+      assetA: 'DAI',
+      assetB: 'renBTC',
+      key: 'DAI:renBTC',
+      address: '0x7F4bc1F022A403300356e3FfFab6251c8AA4d26b'
+    },
+    {
+      assetA: 'DAI',
+      assetB: 'WBTC',
+      key: 'DAI:WBTC',
+      address: '0x231B7589426Ffe1b75405526fC32aC09D44364c4'
+    },
+    {
+      assetA: 'USDC',
+      assetB: 'USDT',
+      key: 'USDC:USDT',
+      address: '0x3041CbD36888bECc7bbCBc0045E3B1f144466f5f'
+    },
+    {
+      assetA: 'TUSD',
+      assetB: 'USDC',
+      key: 'TUSD:USDC',
+      address: '0xf1f27Db872b7F6E8B873C97F785fe4f9a6C92161'
+    },
+    {
+      assetA: 'BUSD',
+      assetB: 'USDC',
+      key: 'BUSD:USDC',
+      address: '0x524847C615639e76fE7D0FE0B16be8c4eAC9CF3c'
+    },
+    {
+      assetA: 'USDC',
+      assetB: 'sUSD',
+      key: 'USDC:sUSD',
+      address: '0x0865b9C7Cd9aa9F0e9F61E96C11e524145b70550'
+    },
+    {
+      assetA: 'PAX',
+      assetB: 'USDC',
+      key: 'PAX:USDC',
+      address: '0x3139Ffc91B99aa94DA8A2dc13f1fC36F9BDc98eE'
+    },
+    {
+      assetA: 'USDC',
+      assetB: 'renBTC',
+      key: 'USDC:renBTC',
+      address: '0xdD71f5E002143d34eA24696600bC4d82B904FAFA'
+    },
+    {
+      assetA: 'USDC',
+      assetB: 'WBTC',
+      key: 'USDC:WBTC',
+      address: '0x004375Dff511095CC5A197A54140a24eFEF3A416'
+    },
+    {
+      assetA: 'KEYFI',
+      assetB: 'USDC',
+      key: 'KEYFI:USDC',
+      address: '0xb99c23A9A444eBeb0cE4a67F27DAB8D4826B1108'
+    },
+    {
+      assetA: 'TUSD',
+      assetB: 'USDT',
+      key: 'TUSD:USDT',
+      address: '0x615Cc08dF9084e3faC80FE19045A55612185B6a4'
+    },
+    {
+      assetA: 'BUSD',
+      assetB: 'USDT',
+      key: 'BUSD:USDT',
+      address: '0xa0ABda1F980e03D7eADb78aed8fC1f2DD0fe83Dd'
+    },
+    {
+      assetA: 'USDT',
+      assetB: 'sUSD',
+      key: 'USDT:sUSD',
+      address: '0xB0A539BEA1787813359Fb9AF8e2efD35dd35a744'
+    },
+    {
+      assetA: 'PAX',
+      assetB: 'USDT',
+      key: 'PAX:USDT',
+      address: '0x7cD0378010711CB72a6ca35f09D5Da2094061D9c'
+    },
+    {
+      assetA: 'USDT',
+      assetB: 'WBTC',
+      key: 'USDT:WBTC',
+      address: '0x0DE0Fa91b6DbaB8c8503aAA2D1DFa91a192cB149'
+    },
+    {
+      assetA: 'PAX',
+      assetB: 'TUSD',
+      key: 'PAX:TUSD',
+      address: '0xfC5211986172260fb6579eb06220b14F4389011F'
+    },
+    {
+      assetA: 'TUSD',
+      assetB: 'WBTC',
+      key: 'TUSD:WBTC',
+      address: '0xe5542de22E8819195171ba8A496F78009c7410B8'
+    },
+    {
+      assetA: 'WBTC',
+      assetB: 'renBTC',
+      key: 'WBTC:renBTC',
+      address: '0xF12C086347a328F3a000d892f23875d886d530cF'
+    },
+    {
+      assetA: 'HBTC',
+      assetB: 'WBTC',
+      key: 'HBTC:WBTC',
+      address: '0x8064c6C75F05Bb01d1F9c618221e880DA51E4D38'
+    }
   ],
   'ropsten': [
-    [ 'DAI', 'ETH' ],
-    [ 'DAI', 'UNI' ],
-    [ 'DAI', 'USDT' ],
-    [ 'DAI', 'WETH' ],
-    [ 'ETH', 'KEYFI' ],
-    [ 'ETH', 'LOCK' ],
-    [ 'ETH', 'UNI' ],
-    [ 'ETH', 'USDT' ],
-    [ 'KEYFI', 'WETH' ],
-    [ 'LOCK', 'WETH' ],
-    [ 'UNI', 'WETH' ],
-    [ 'USDT', 'WETH' ],
+    {
+      assetA: 'DAI',
+      assetB: 'WETH',
+      key: 'DAI:WETH',
+      address: '0x1c5DEe94a34D795f9EEeF830B68B80e44868d316'
+    },
+    {
+      assetA: 'LOCK',
+      assetB: 'WETH',
+      key: 'LOCK:WETH',
+      address: '0x193f075B905e55E46F674988eD06c62e75214Bf8'
+    },
+    {
+      assetA: 'USDT',
+      assetB: 'WETH',
+      key: 'USDT:WETH',
+      address: '0x230c4C6De893F369920a94Bd354589EA1A8BcAfD'
+    },
+    {
+      assetA: 'UNI',
+      assetB: 'WETH',
+      key: 'UNI:WETH',
+      address: '0x4E99615101cCBB83A462dC4DE2bc1362EF1365e5'
+    },
+    {
+      assetA: 'KEYFI',
+      assetB: 'WETH',
+      key: 'KEYFI:WETH',
+      address: '0xa6471E93BBAa43F54337094AD444F8DBe95ED0b5'
+    },
+    {
+      assetA: 'DAI',
+      assetB: 'USDT',
+      key: 'DAI:USDT',
+      address: '0x081F7d45775fFf4f5d81Cc81B71Aac26D87e0502'
+    },
+    {
+      assetA: 'DAI',
+      assetB: 'UNI',
+      key: 'DAI:UNI',
+      address: '0x36a59aC1b05D10Cc00bD8e7e5D98B967aeB4feDb'
+    }
   ]
 };
 
