@@ -300,7 +300,10 @@ export const getAccountLiquidity = async (
 
   const pairAddress = await getPairAddress(web3, assetAAddress, assetBAddress);
   const pairContract = new web3.eth.Contract(pairAbi, pairAddress);
-  const balance = await pairContract.methods.balanceOf(address).call();
+  // In case we already know the balance we can pass it as option
+  const balance = options.balance
+    ? options.balance
+    : await pairContract.methods.balanceOf(address).call();
   const totalSupply = await pairContract.methods.totalSupply().call();
   const pairLiquidity = await getLiquidity(assetA, assetB, { raw: true });
 
