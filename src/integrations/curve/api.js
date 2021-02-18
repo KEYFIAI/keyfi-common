@@ -239,10 +239,12 @@ export const getBalance = async (accountAddress = null) => {
   //   return newObj;
   // })
 
-  return tokens.reduce((info, token) => {
-    info[token.symbol] = token.balance.toFixed();
-    return info;
-  }, {});
+  return [{
+    'DAI': tokens[0].balance.toFixed(),
+    'USDC': tokens[0].balance.toFixed(),
+    assetA: 'DAI',
+    assetB: 'USDC',
+  }];
 };
 
 export const removeLiquidity = async (assetA, assetB, percent, options = {}) => {
