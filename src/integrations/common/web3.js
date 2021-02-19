@@ -194,6 +194,7 @@ export const getWeb3 = async (providerId, init) => {
 
 export const resetWeb3 = () => {
   _web3 = null;
+  resetNetwork();
 };
 
 export const approveErc20IfNeeded = async (
@@ -258,7 +259,13 @@ export const approveErc20IfNeeded = async (
   }
 };
 
+let _network = null;
+
 export const getNetwork = async (web3) => {
+  if (_network) {
+    return _network;
+  }
+
   const chainId = await web3.eth.net.getId();
 
   let name = networkNames[chainId];
@@ -266,7 +273,19 @@ export const getNetwork = async (web3) => {
     name = "unknown";
   }
 
-  return { chainId, name };
+  _network = { chainId, name };
+
+  if (_providerId === WalletProviderId.Metamask) {
+    window.ethereum.once("chainChanged", () => {
+      resetNetwork();
+    });
+  }
+
+  return _network;
+};
+
+export const resetNetwork = () => {
+  _network = null;
 };
 
 export const getTrxOverrides = (options) => {
