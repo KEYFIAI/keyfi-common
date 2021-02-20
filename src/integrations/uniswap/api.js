@@ -119,6 +119,51 @@ export const getAvailablePairedAssets = async (mainAsset) => {
   return Array.from(new Set(paired));
 };
 
+const MAXIMUM_ROUTE_LENGTH = 4;
+
+const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
+  if (fromAssetSymbol === toAssetSymbol) {
+    throw new Error('fromAssetSymbol and toAssetSymbol are same!');
+  }
+
+  if (await isPairAvailable(fromAssetSymbol, toAssetSymbol)) {
+    return [fromAssetSymbol, toAssetSymbol];
+  }
+
+  let neededRoute = null;
+  let routes = [[fromAssetSymbol]];
+  while (
+    !neededRoute
+    && routes.length > 0
+    && routes[0].length < MAXIMUM_ROUTE_LENGTH
+  ) {
+    let newRoutes = [];
+    for (const route of routes) {
+      const pairedAssets = await getAvailablePairedAssets(
+        route[route.length - 1]
+      );
+
+      newRoutes = newRoutes.concat(
+        pairedAssets.map((asset) => [...route, asset])
+      );
+    }
+
+    routes = newRoutes;
+    neededRoute = routes.find(
+      (route) => route[route.length - 1] === toAssetSymbol
+    );
+  }
+
+  if (!neededRoute) {
+    throw new Error(
+      `Cannot find route from ${fromAssetSymbol} to ${toAssetSymbol} `
+      + `in ${MAXIMUM_ROUTE_LENGTH} hops`
+    );
+  }
+
+  return neededRoute;
+};
+
 export const estimateSwap = async (
   fromAssetSymbol,
   fromAmount,
@@ -127,20 +172,26 @@ export const estimateSwap = async (
   fromAmount = normalizeAmount(fromAssetSymbol, fromAmount);
 
   const web3 = await getWeb3();
-  const fromAssetAddress = await getAssetAddress(web3, fromAssetSymbol);
-  const toAssetAddress = await getAssetAddress(web3, toAssetSymbol);
 
   const routerAddress = await getContractAddress(web3, 'Router02');
   const routerContract = new web3.eth.Contract(routerAbi, routerAddress);
 
+  const route = await findRoute(fromAssetSymbol, toAssetSymbol);
+  const routeAddresses = await Promise.all(
+    route.map((assetSymbol) => getAssetAddress(web3, assetSymbol))
+  );
+
   const result = await routerContract.methods.getAmountsOut(
     fromAmount,
-    [fromAssetAddress, toAssetAddress],
+    routeAddresses,
   ).call();
 
+  const resultLast = result[result.length - 1];
+
   return {
-    returnAmount: result[1],
-    returnAmountHuman: denormalizeAmount(toAssetSymbol, result[1]),
+    returnAmount: resultLast,
+    returnAmountHuman: denormalizeAmount(toAssetSymbol, resultLast),
+    route,
   };
 };
 
@@ -148,17 +199,13 @@ export const swap = async (
   fromAssetSymbol,
   fromAmount,
   toAssetSymbol,
+  estimation,
   options = {}
 ) => {
   const fromAmountDecimalized = normalizeAmount(fromAssetSymbol, fromAmount);
 
-  let { estimation } = options;
-  if (!estimation) {
-    estimation = await estimateSwap(
-      fromAssetSymbol,
-      fromAmount,
-      toAssetSymbol,
-    );
+  if (!estimation || !estimation.returnAmount) {
+    throw new Error('No estimation have passed as arg!');
   }
 
   const web3 = await getWeb3();

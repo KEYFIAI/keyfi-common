@@ -164,7 +164,7 @@ export const createWeb3InBrowser = (providerId) => {
     return createWalletConnectWeb3();
   }
 
-  throw new Error(`Wallet provider ${providerId} not supperted`);
+  throw new Error(`Wallet provider ${providerId} not supported`);
 };
 
 let _web3 = null;
