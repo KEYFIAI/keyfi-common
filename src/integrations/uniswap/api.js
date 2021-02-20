@@ -211,14 +211,15 @@ export const swap = async (
   const web3 = await getWeb3();
   const accountAddress = getCurrentAccountAddress(web3);
   const trxOverrides = getTrxOverrides(options);
-  const fromAssetAddress = await getAssetAddress(web3, fromAssetSymbol);
-  const toAssetAddress = await getAssetAddress(web3, toAssetSymbol);
+  const routeAddresses = await Promise.all(
+    estimation.route.map((assetSymbol) => getAssetAddress(web3, assetSymbol)),
+  );
   const routerAddress = await getContractAddress(web3, 'Router02');
 
   if (fromAssetSymbol !== 'ETH') {
     await approveErc20IfNeeded(
       web3,
-      fromAssetAddress,
+      routeAddresses[0],
       routerAddress,
       fromAmountDecimalized,
       {
@@ -249,7 +250,7 @@ export const swap = async (
   if (fromAssetSymbol === 'ETH') {
     return routerContract.methods.swapExactETHForTokens(
       minReturn,
-      [fromAssetAddress, toAssetAddress],
+      routeAddresses,
       accountAddress,
       deadline,
     ).send(
@@ -277,7 +278,7 @@ export const swap = async (
   return method(
     fromAmountDecimalized,
     minReturn,
-    [fromAssetAddress, toAssetAddress],
+    routeAddresses,
     accountAddress,
     deadline,
   ).send(
