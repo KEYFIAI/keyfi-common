@@ -23,7 +23,7 @@ import {
   promisifyBatchRequest,
 } from '../common';
 
-const DEFAULT_MAX_SLIPPAGE = 0.005;
+export const DEFAULT_MAX_SLIPPAGE = 0.005;
 const GAS_LIMIT = 300000;
 const PENDING_CALLBACK_PLATFORM = 'uniswap';
 
