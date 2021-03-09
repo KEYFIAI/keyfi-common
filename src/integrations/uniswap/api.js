@@ -1,3 +1,4 @@
+import axios from 'axios';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -13,6 +14,7 @@ import routerAbi from './abi/router02.abi.json';
 import pairAbi from './abi/pair.abi.json';
 import {
   approveErc20IfNeeded,
+  erc20Addresses,
   getCurrentAccountAddress,
   getNetwork,
   getPendingTrxCallback,
@@ -20,12 +22,13 @@ import {
   getWeb3,
   normalizeAmount,
   denormalizeAmount,
-  promisifyBatchRequest,
 } from '../common';
+import { userLiquidityQuery } from './graphql';
 
 export const DEFAULT_MAX_SLIPPAGE = 0.005;
 const GAS_LIMIT = 300000;
 const PENDING_CALLBACK_PLATFORM = 'uniswap';
+const UNISWAP_GRAPHQL_URL = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2';
 
 const calculateMinAmount = (amount, slippage) => (new BigNumber(amount))
   .multipliedBy(1 - slippage)
@@ -42,11 +45,18 @@ const getContractAddress = async (web3, contractName) => {
   }
 
   const address = contractAddresses[name][contractName];
-  if (!address) {
-    throw new Error(`Unknown contract: '${contractName}' on '${name}' network`);
+  if (address) {
+    return address;
   }
 
-  return address;
+  if (erc20Addresses[name]) {
+    const erc20Address = erc20Addresses[name][contractName];
+    if (erc20Address) {
+      return erc20Address;
+    }
+  }
+
+  throw new Error(`Unknown contract: '${contractName}' on '${name}' network`);
 };
 
 const getAssetAddress = async (web3, asset) => {
@@ -303,7 +313,7 @@ export const getLiquidity = async (assetA, assetB, options = {}) => {
 
   let assetAAddress = await getAssetAddress(web3, assetA);
   let assetBAddress = await getAssetAddress(web3, assetB);
-  if (assetAAddress > assetBAddress) {
+  if (assetAAddress.toLowerCase() > assetBAddress.toLowerCase()) {
     [assetA, assetB] = [assetB, assetA];
     [assetAAddress, assetBAddress] = [assetBAddress, assetAAddress];
   }
@@ -397,74 +407,53 @@ export const getAccountLiquidityAll = async (address = null) => {
     address = getCurrentAccountAddress(web3);
   }
 
-  // 1st step - fetch account's liquidity on all available pairs
-  const assets = await getSupportedAssetsMap();
-  const assetsPairs = availablePairs[networkName].map((pair) => ({
-    ...pair,
-    contract: new web3.eth.Contract(pairAbi, pair.address),
-  }));
-
-  const batch1 = new web3.BatchRequest();
-  const promises1 = assetsPairs.map(async (pair) => {
-    const balance = await promisifyBatchRequest(
-      batch1,
-      pair.contract.methods.balanceOf(address).call.request,
-    );
-
-    pair.balance = new BigNumber(balance);
-  });
-  batch1.execute();
-  await Promise.all(promises1);
-
-  // Fetch and calculate info for pairs with account liquidity
-  const pairsWithLiquidity = assetsPairs.filter(
-    (pair) => pair.balance.gt(0),
+  const res = await axios.post(
+    UNISWAP_GRAPHQL_URL,
+    {
+      query: userLiquidityQuery.replace("$ACCOUNT_ADDRESS", address)
+    },
   );
 
-  const batch2 = new web3.BatchRequest();
-  const promises2 = pairsWithLiquidity.map(async (pair) => {
-    const totalSupplyPromise = promisifyBatchRequest(
-      batch2,
-      pair.contract.methods.totalSupply().call.request,
-    );
+  const liquidityPositions = res.data.data.user
+    ? res.data.data.user.liquidityPositions : [];
+  const supportedAssets = await getSupportedAssets();
 
-    const reservesPromise = promisifyBatchRequest(
-      batch2,
-      pair.contract.methods.getReserves().call.request,
-    );
+  const liquidityAll = liquidityPositions.reduce((pairs, liquidityPair) => {
+    const assetA = liquidityPair.pair.token0.symbol;
+    const assetB = liquidityPair.pair.token1.symbol;
 
-    pair.totalSupply = await totalSupplyPromise;
+    if (supportedAssets.includes(assetA) && supportedAssets.includes(assetB)) {
+      const { totalSupply } = liquidityPair.pair;
+      const liquidityBalance = BigNumber(liquidityPair.liquidityTokenBalance);
+      const liquidityPercent = liquidityBalance.dividedBy(totalSupply);
 
-    const reserves = await reservesPromise;
-    if (assets[pair.assetA] < assets[pair.assetB]) {
-      pair[pair.assetA] = reserves._reserve0;
-      pair[pair.assetB] = reserves._reserve1;
-    } else {
-      pair[pair.assetA] = reserves._reserve1;
-      pair[pair.assetB] = reserves._reserve0;
+      if (liquidityPercent > 0) {
+        pairs.push({
+          assetA,
+          assetB,
+          [assetA]: liquidityPercent.multipliedBy(
+            liquidityPair.pair.reserve0
+          ).toFixed(),
+          [assetB]: liquidityPercent.multipliedBy(
+            liquidityPair.pair.reserve1,
+          ).toFixed(),
+          liquidity: liquidityPair.liquidityTokenBalance,
+          totalLiquidity: totalSupply,
+          liquidityPercent: liquidityPercent.toFixed(),
+        });
+      }
     }
-  });
-  batch2.execute();
-  await Promise.all(promises2);
 
-  return pairsWithLiquidity.map((pair) => {
-    const liquidityPercent = pair.balance.dividedBy(pair.totalSupply);
-    const { assetA, assetB } = pair;
+    return pairs;
+  }, []);
 
-    return {
-      assetA,
-      assetB,
-      [assetA]: liquidityPercent.multipliedBy(
-        denormalizeAmount(assetA, pair[assetA]),
-      ).toFixed(),
-      [assetB]: liquidityPercent.multipliedBy(
-        denormalizeAmount(assetB, pair[assetB]),
-      ).toFixed(),
-      liquidity: denormalizeAmount('UNI-V2', pair.balance.toFixed()),
-      totalLiquidity: pair.totalSupply,
-      liquidityPercent: liquidityPercent.toFixed(),
-    };
-  });
+  // Fetch KEYFI/USDC liquidity from chain to be able to debug it on ganache
+  const keyfiLiquidity = await getAccountLiquidity('KEYFI', 'USDC');
+  if (keyfiLiquidity.liquidity > 0) {
+    liquidityAll.push(keyfiLiquidity);
+  }
+
+  return liquidityAll;
 };
 
 export const addLiquidity = async (
@@ -730,6 +719,11 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
 export const getSupportedAssetsMap = async () => {
   const web3 = await getWeb3();
   const { name } = await getNetwork(web3);
+
+  // On mainnet we are supporting all available assets
+  if (name === 'mainnet') {
+    return erc20Addresses['mainnet'];
+  }
 
   return Object.entries(contractAddresses[name]).reduce(
     (acc, [assetSymbol, assetAddress]) => {
