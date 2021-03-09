@@ -369,6 +369,8 @@ export const getAccountLiquidity = async (
 
   if (options.raw) {
     return {
+      assetA,
+      assetB,
       [assetA]: liquidityPercent.multipliedBy(pairLiquidity[assetA])
         .dividedToIntegerBy(1).toFixed(0),
       [assetB]: liquidityPercent.multipliedBy(pairLiquidity[assetB])
@@ -380,6 +382,8 @@ export const getAccountLiquidity = async (
   }
 
   return {
+    assetA,
+    assetB,
     [assetA]: liquidityPercent.multipliedBy(
       denormalizeAmount(assetA, pairLiquidity[assetA]),
     ).toFixed(),
