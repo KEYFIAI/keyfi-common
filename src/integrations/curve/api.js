@@ -162,7 +162,7 @@ export const addLiquidity = async (
   );
 };
 
-export const getBalance = async (accountAddress = null) => {
+export const getAccountLiquidityAll = async (accountAddress = null) => {
   const web3 = await getWeb3();
   await assertSupportedChain(web3);
 
@@ -239,9 +239,13 @@ export const getBalance = async (accountAddress = null) => {
   //   return newObj;
   // })
 
+  if (tokens[0].balance.plus(tokens[1].balance).eq(0)) {
+    return [];
+  }
+
   return [{
     'DAI': tokens[0].balance.toFixed(),
-    'USDC': tokens[0].balance.toFixed(),
+    'USDC': tokens[1].balance.toFixed(),
     assetA: 'DAI',
     assetB: 'USDC',
   }];

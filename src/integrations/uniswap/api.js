@@ -29,6 +29,7 @@ export const DEFAULT_MAX_SLIPPAGE = 0.005;
 const GAS_LIMIT = 300000;
 const PENDING_CALLBACK_PLATFORM = 'uniswap';
 const UNISWAP_GRAPHQL_URL = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2';
+const UNSUPPORTED_ASSETS = ['KEYFIUSDCLP'];
 
 const calculateMinAmount = (amount, slippage) => (new BigNumber(amount))
   .multipliedBy(1 - slippage)
@@ -720,7 +721,7 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
   );
 };
 
-export const getSupportedAssetsMap = async () => {
+const getSupportedAssetsMapUnfiltered = async () => {
   const web3 = await getWeb3();
   const { name } = await getNetwork(web3);
 
@@ -742,5 +743,7 @@ export const getSupportedAssetsMap = async () => {
 };
 
 export const getSupportedAssets = async () => {
-  return Object.keys(await getSupportedAssetsMap()).concat('ETH');
+  return Object.keys(await getSupportedAssetsMapUnfiltered())
+    .filter((asset) => !UNSUPPORTED_ASSETS.includes(asset))
+    .concat('ETH');
 };
