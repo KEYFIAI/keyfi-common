@@ -266,6 +266,10 @@ export const getNetwork = async (web3) => {
     return _network;
   }
 
+  if (!web3) {
+    web3 = await getWeb3();
+  }
+
   const chainId = await web3.eth.net.getId();
 
   let name = networkNames[chainId];

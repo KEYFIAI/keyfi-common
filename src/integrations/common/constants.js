@@ -58,6 +58,9 @@ export const erc20Addresses = {
     'UBT': '0x8400D94A5cb0fa0D041a3788e395285d61c9ee5e',
     'UNI': '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
     'XOR': '0x40FD72257597aA14C7231A7B1aaa29Fce868F677',
+  },
+  'bsc-testnet': {
+    'KEYFI': '0xe1618ad65964da3a4f44cb70723d6c6dd6d839c2',
   }
 };
 
@@ -138,6 +141,8 @@ export const decimals = {
 export const networkNames = {
   1: 'mainnet',
   3: 'ropsten',
+  56: 'bsc-mainnet',
+  97: 'bsc-testnet',
 };
 
 export const coingeckoAssetsIds = {

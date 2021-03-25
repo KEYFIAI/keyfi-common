@@ -1,10 +1,6 @@
 import BigNumber from 'bignumber.js';
 import rewardPoolAbi from './reward-pool.abi.json';
-import {
-  contractAddresses,
-  supportedAssets,
-  supportedNetworks,
-} from './constants';
+import { contractAddresses } from './constants';
 import {
   approveErc20IfNeeded,
   getCurrentAccountAddress,
@@ -21,19 +17,36 @@ const GAS_LIMIT = 250000;
 const PENDING_CALLBACK_PLATFORM = 'keyfi rewardpool';
 
 const getContractAddress = async (web3, contractName) => {
-  const { chainId } = await getNetwork(web3);
+  const network = await getNetwork(web3);
 
-  const name = supportedNetworks[chainId];
-  if (!name) {
-    throw new Error(`Network with chainId=${chainId} is not supported!`);
+  const addresses = contractAddresses[network.name];
+  if (!addresses) {
+    throw new Error(`Network with chainId=${network.chainId} is not supported!`);
   }
 
-  const address = contractAddresses[name][contractName];
+  const address = addresses[contractName];
   if (!address) {
-    throw new Error(`Unknown contract: '${contractName}' on '${name}' network`);
+    throw new Error(
+      `Unknown contract: '${contractName}' on '${network.name}' network`
+    );
   }
 
   return address;
+};
+
+export const getSupportedAssets = async (web3) => {
+  if (!web3) {
+    web3 = await getWeb3();
+  }
+
+  const network = await getNetwork(web3);
+
+  const addresses = contractAddresses[network.name];
+  if (!addresses) {
+    throw new Error(`Network with chainId=${network.chainId} is not supported!`);
+  }
+
+  return Object.keys(addresses).filter((asset) => asset !== 'RewardPool');
 };
 
 export const getBalance = async (accountAddress = null, options = {}) => {
@@ -47,7 +60,7 @@ export const getBalance = async (accountAddress = null, options = {}) => {
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
 
   const balances = {};
-  for (const asset of supportedAssets) {
+  for (const asset of await getSupportedAssets(web3)) {
     const assetAddress = await getContractAddress(web3, asset);
 
     const assetBalance = await poolContract.methods.getBalance(
@@ -222,7 +235,7 @@ export const getRewards = async (accountAddress = null) => {
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
 
   const rewards = {};
-  for (const asset of supportedAssets) {
+  for (const asset of await getSupportedAssets(web3)) {
     const assetAddress = await getContractAddress(web3, asset);
 
     const assetReward = await poolContract.methods.pendingReward(
