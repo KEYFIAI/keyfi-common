@@ -7,33 +7,41 @@ import {
   getWeb3,
   normalizeAmount,
   denormalizeAmount,
-} from '../common';
+  processWeb3OrNetworkArgument,
+} from "../common";
 import {
   accountNumbers,
   actionType,
   contractAddresses,
   supportedAssets,
-  supportedNetworks,
   marketId,
-} from './constants';
+} from "./constants";
 import SoloMarginAbi from "./solo-margin.abi.json";
 import PayableSoloMarginAbi from "./payable-solo-margin.abi.json";
 
 // Deposit can take more than 200000+ of gas
 const GAS_LIMIT = 250000;
-const PENDING_CALLBACK_PLATFORM = 'dydx';
+const PENDING_CALLBACK_PLATFORM = "dydx";
 
-export const getContractAddress = async (web3, contractName) => {
-  const { chainId } = await getNetwork(web3);
+export const isSupportedNetwork = async (web3OrNetwork) => {
+  const network = await processWeb3OrNetworkArgument(web3OrNetwork);
+  return Boolean(contractAddresses[network.name]);
+};
 
-  const name = supportedNetworks[chainId];
-  if (!name) {
-    throw new Error(`Network chainId=${chainId} name=${name} is not supported!`);
+const getContractAddress = async (web3, contractName) => {
+  const network = await getNetwork(web3);
+
+  if (!await isSupportedNetwork(network)) {
+    throw new Error(
+      `Network chainId=${network.chainId} name=${network.name} is not supported!`
+    );
   }
 
-  const address = contractAddresses[name][contractName];
+  const address = contractAddresses[network.name][contractName];
   if (!address) {
-    throw new Error(`Unknown contract: '${contractName}' on '${name}' network`);
+    throw new Error(
+      `Unknown contract: '${contractName}' on '${network.name}' network`
+    );
   }
 
   return address;
@@ -42,11 +50,15 @@ export const getContractAddress = async (web3, contractName) => {
 export const getBalance = async (accountAddress = null) => {
   const web3 = await getWeb3();
 
+  if (!await isSupportedNetwork(web3)) {
+    return {};
+  }
+
   if (!accountAddress) {
     accountAddress = getCurrentAccountAddress(web3);
   }
 
-  const soloAddress = await getContractAddress(web3, 'SoloMargin');
+  const soloAddress = await getContractAddress(web3, "SoloMargin");
   const soloContract = new web3.eth.Contract(SoloMarginAbi, soloAddress);
 
   const result = await soloContract.methods.getAccountBalances({
@@ -54,14 +66,14 @@ export const getBalance = async (accountAddress = null) => {
     number: accountNumbers.SPOT,
   }).call();
 
-  const weiBalance = result['2'];
+  const weiBalance = result["2"];
   const balance = {};
 
   for (const symbol of supportedAssets) {
     balance[symbol] = denormalizeAmount(
       symbol,
       weiBalance[
-        symbol === 'ETH' ? marketId.WETH : marketId[symbol]
+        symbol === "ETH" ? marketId.WETH : marketId[symbol]
       ].value
     );
   }
@@ -81,11 +93,11 @@ export const deposit = async (asset, amount, options = {}) => {
   const accountAddress = await getCurrentAccountAddress(web3);
 
   let trxValue = 0;
-  let soloAddress = await getContractAddress(web3, 'SoloMargin');
+  let soloAddress = await getContractAddress(web3, "SoloMargin");
   let soloContract = new web3.eth.Contract(SoloMarginAbi, soloAddress);
   let transferFromAddress = accountAddress;
 
-if (asset !== 'ETH') {
+if (asset !== "ETH") {
     const assetAddress = await getContractAddress(web3, asset);
 
     await approveErc20IfNeeded(
@@ -110,7 +122,7 @@ if (asset !== 'ETH') {
     );
   } else {
     // ETH should be deposited through payable proxy contract
-    soloAddress = await getContractAddress(web3, 'PayableSoloMargin');
+    soloAddress = await getContractAddress(web3, "PayableSoloMargin");
     soloContract = new web3.eth.Contract(PayableSoloMarginAbi, soloAddress);
     transferFromAddress = soloAddress;
     trxValue = nAmount;
@@ -130,15 +142,15 @@ if (asset !== 'ETH') {
       },
       accountId: 0,
       actionType: actionType.Deposit,
-      primaryMarketId: asset === 'ETH' ? marketId.WETH : marketId[asset],
-      secondaryMarketId: '0',
+      primaryMarketId: asset === "ETH" ? marketId.WETH : marketId[asset],
+      secondaryMarketId: "0",
       otherAddress: transferFromAddress,
-      otherAccountId: '0',
+      otherAccountId: "0",
       data: [],
     }]
   ];
 
-  if (asset === 'ETH') {
+  if (asset === "ETH") {
     sendArgs.push(accountAddress);
   }
 
@@ -151,7 +163,7 @@ if (asset !== 'ETH') {
     },
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
-      type: 'deposit',
+      type: "deposit",
       assets: [{
         symbol: asset,
         amount: amount,
@@ -172,12 +184,12 @@ export const withdraw = async (asset, amount, options = {}) => {
   const accountAddress = await getCurrentAccountAddress(web3);
 
   let trxValue = 0;
-  let soloAddress = await getContractAddress(web3, 'SoloMargin');
+  let soloAddress = await getContractAddress(web3, "SoloMargin");
   let soloContract = new web3.eth.Contract(SoloMarginAbi, soloAddress);
   let transferFromAddress = accountAddress;
 
-  if (asset === 'ETH') {
-    soloAddress = await getContractAddress(web3, 'PayableSoloMargin');
+  if (asset === "ETH") {
+    soloAddress = await getContractAddress(web3, "PayableSoloMargin");
     soloContract = new web3.eth.Contract(PayableSoloMarginAbi, soloAddress);
     transferFromAddress = soloAddress;
   }
@@ -196,15 +208,15 @@ export const withdraw = async (asset, amount, options = {}) => {
       },
       accountId: 0,
       actionType: actionType.Withdraw,
-      primaryMarketId: asset === 'ETH' ? marketId.WETH : marketId[asset],
-      secondaryMarketId: '0',
+      primaryMarketId: asset === "ETH" ? marketId.WETH : marketId[asset],
+      secondaryMarketId: "0",
       otherAddress: transferFromAddress,
-      otherAccountId: '0',
+      otherAccountId: "0",
       data: [],
     }]
   ];
 
-  if (asset === 'ETH') {
+  if (asset === "ETH") {
     sendArgs.push(accountAddress);
   }
 
@@ -217,7 +229,7 @@ export const withdraw = async (asset, amount, options = {}) => {
     },
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
-      type: 'withdraw',
+      type: "withdraw",
       assets: [{
         symbol: asset,
         amount: amount,

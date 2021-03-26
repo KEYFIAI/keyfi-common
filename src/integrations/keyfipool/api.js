@@ -1,6 +1,6 @@
-import BigNumber from 'bignumber.js';
-import rewardPoolAbi from './reward-pool.abi.json';
-import { contractAddresses } from './constants';
+import BigNumber from "bignumber.js";
+import rewardPoolAbi from "./reward-pool.abi.json";
+import { contractAddresses } from "./constants";
 import {
   approveErc20IfNeeded,
   getCurrentAccountAddress,
@@ -10,21 +10,26 @@ import {
   getWeb3,
   normalizeAmount,
   denormalizeAmount,
-} from '../common';
-import { getAccountLiquidity } from '../uniswap';
+  processWeb3OrNetworkArgument,
+} from "../common";
+import { getAccountLiquidity } from "../uniswap";
 
 const GAS_LIMIT = 250000;
-const PENDING_CALLBACK_PLATFORM = 'keyfi rewardpool';
+const PENDING_CALLBACK_PLATFORM = "keyfi rewardpool";
+
+export const isSupportedNetwork = async (web3OrNetwork) => {
+  const network = await processWeb3OrNetworkArgument(web3OrNetwork);
+  return Boolean(contractAddresses[network.name]);
+};
 
 const getContractAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
 
-  const addresses = contractAddresses[network.name];
-  if (!addresses) {
+  if (!await isSupportedNetwork(network)) {
     throw new Error(`Network with chainId=${network.chainId} is not supported!`);
   }
 
-  const address = addresses[contractName];
+  const address = contractAddresses[network.name][contractName];
   if (!address) {
     throw new Error(
       `Unknown contract: '${contractName}' on '${network.name}' network`
@@ -46,17 +51,21 @@ export const getSupportedAssets = async (web3) => {
     throw new Error(`Network with chainId=${network.chainId} is not supported!`);
   }
 
-  return Object.keys(addresses).filter((asset) => asset !== 'RewardPool');
+  return Object.keys(addresses).filter((asset) => asset !== "RewardPool");
 };
 
 export const getBalance = async (accountAddress = null, options = {}) => {
   const web3 = options.web3 ? options.web3 : await getWeb3();
 
+  if (!await isSupportedNetwork(web3)) {
+    return {};
+  }
+
   if (!accountAddress) {
     accountAddress = getCurrentAccountAddress(web3);
   }
 
-  const poolAddress = await getContractAddress(web3, 'RewardPool');
+  const poolAddress = await getContractAddress(web3, "RewardPool");
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
 
   const balances = {};
@@ -85,13 +94,13 @@ export const getStaked = async (accountAddress) => {
 
   if (BigNumber(balance.KEYFIUSDCLP).gt(0)) {
     const pairBalance = balance.KEYFIUSDCLP;
-    delete balance['KEYFIUSDCLP'];
+    delete balance["KEYFIUSDCLP"];
 
     const pair = await getAccountLiquidity(
-      'USDC',
-      'KEYFI',
+      "USDC",
+      "KEYFI",
       null,
-      { balance: normalizeAmount('KEYFIUSDCLP', pairBalance) }
+      { balance: normalizeAmount("KEYFIUSDCLP", pairBalance) }
     );
 
     balance.KEYFI =
@@ -109,7 +118,7 @@ export const deposit = async (asset, amount, options = {}) => {
   const web3 = await getWeb3();
 
   const assetAddress = await getContractAddress(web3, asset);
-  const poolAddress = await getContractAddress(web3, 'RewardPool');
+  const poolAddress = await getContractAddress(web3, "RewardPool");
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
   const trxOverrides = getTrxOverrides(options);
 
@@ -143,7 +152,7 @@ export const deposit = async (asset, amount, options = {}) => {
     },
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
-      type: 'deposit',
+      type: "deposit",
       assets: [{
         symbol: asset,
         amount,
@@ -158,7 +167,7 @@ export const withdraw = async (asset, amount, options = {}) => {
   const web3 = await getWeb3();
 
   const assetAddress = await getContractAddress(web3, asset);
-  const poolAddress = await getContractAddress(web3, 'RewardPool');
+  const poolAddress = await getContractAddress(web3, "RewardPool");
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
   const trxOverrides = getTrxOverrides(options);
 
@@ -171,7 +180,7 @@ export const withdraw = async (asset, amount, options = {}) => {
     },
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
-      type: 'withdraw',
+      type: "withdraw",
       assets: [{
         symbol: asset,
         amount,
@@ -184,7 +193,7 @@ export const withdrawReward = async (asset, options = {}) => {
   const web3 = await getWeb3();
 
   const assetAddress = await getContractAddress(web3, asset);
-  const poolAddress = await getContractAddress(web3, 'RewardPool');
+  const poolAddress = await getContractAddress(web3, "RewardPool");
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
   const trxOverrides = getTrxOverrides(options);
 
@@ -216,7 +225,7 @@ export const withdrawReward = async (asset, options = {}) => {
     },
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
-      type: 'withdraw_rewards',
+      type: "withdraw_rewards",
       assets: [{
         symbol: asset,
       }],
@@ -231,7 +240,7 @@ export const getRewards = async (accountAddress = null) => {
     accountAddress = getCurrentAccountAddress(web3);
   }
 
-  const poolAddress = await getContractAddress(web3, 'RewardPool');
+  const poolAddress = await getContractAddress(web3, "RewardPool");
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
 
   const rewards = {};

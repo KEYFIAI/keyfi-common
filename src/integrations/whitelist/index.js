@@ -1,9 +1,19 @@
-import whitelistAbi from './whitelist.abi.json';
-import { getCurrentAccountAddress, getNetwork, getWeb3 } from '../common';
+import whitelistAbi from "./whitelist.abi.json";
+import {
+  getCurrentAccountAddress,
+  getNetwork,
+  getWeb3,
+  processWeb3OrNetworkArgument
+} from "../common";
 
 const whitelistAddresses = {
-  'mainnet': '0xc3faa8e87cD7b3678FA10C0F9638Eb4BA7DA20C5',
-  'ropsten': '0xa40fC5a9232868B0b681B9C34F3081be32368ad3',
+  "mainnet": "0xc3faa8e87cD7b3678FA10C0F9638Eb4BA7DA20C5",
+  "ropsten": "0xa40fC5a9232868B0b681B9C34F3081be32368ad3",
+};
+
+export const isSupportedNetwork = async (web3OrNetwork) => {
+  const network = await processWeb3OrNetworkArgument(web3OrNetwork);
+  return Boolean(whitelistAddresses[network.name]);
 };
 
 const getWhitelistAddress = async (web3) => {

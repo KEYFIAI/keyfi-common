@@ -1,18 +1,18 @@
-import axios from 'axios';
+import axios from "axios";
 
 import {
   getCurrentAccountAddress,
   getNetwork,
   getWeb3,
   promisifyBatchRequest,
-} from './web3';
-import { denormalizeAmount } from './math';
-import { coingeckoAssetsIds, erc20Addresses } from './constants';
-import erc20Abi from './erc20.abi.json';
+} from "./web3";
+import { denormalizeAmount } from "./math";
+import { coingeckoAssetsIds, erc20Addresses } from "./constants";
+import erc20Abi from "./erc20.abi.json";
 
 export const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
   let assetsOrAddresses = assetOrAssets;
-  if (typeof assetsOrAddresses === 'string') {
+  if (typeof assetsOrAddresses === "string") {
     assetsOrAddresses = [assetsOrAddresses];
   }
 
@@ -69,7 +69,7 @@ export const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
   batch.execute();
 
   const results = await Promise.all(promises);
-  if (typeof assetOrAssets === 'string') {
+  if (typeof assetOrAssets === "string") {
     return results[0];
   }
   return results;
@@ -83,14 +83,14 @@ export const getBalanceEth = async (holderAddress) => {
   }
 
   const balance = await web3.eth.getBalance(holderAddress);
-  return denormalizeAmount('ETH', balance);
+  return denormalizeAmount("ETH", balance);
 };
 
-const ZERO_USD_PRICE_TOKENS = ['KEYFI', 'KEYFIUSDCLP'];
+const ZERO_USD_PRICE_TOKENS = ["KEYFI", "KEYFIUSDCLP"];
 
 export const getUsdPrice = async (assetOrAssets) => {
   let assets = assetOrAssets;
-  if (typeof assetOrAssets === 'string') {
+  if (typeof assetOrAssets === "string") {
     assets = [assets];
   }
 
@@ -109,7 +109,7 @@ export const getUsdPrice = async (assetOrAssets) => {
 
   const response = await axios.get(
     `https://api.coingecko.com/api/v3/simple/price?ids=${
-      assets.map((x) => x.coingeckoId).filter((x) => x).join(',')
+      assets.map((x) => x.coingeckoId).filter((x) => x).join(",")
     }&vs_currencies=usd`,
   );
 
@@ -122,7 +122,7 @@ export const getUsdPrice = async (assetOrAssets) => {
     }
   });
 
-  if (typeof assetOrAssets === 'string') {
+  if (typeof assetOrAssets === "string") {
     return assets[0].usdPrice;
   }
 
@@ -134,7 +134,7 @@ export const getUsdPrice = async (assetOrAssets) => {
 
 export const getKeyfiUsdPrice = async () => {
   const response = await axios.post(
-    `https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2`,
+    "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2",
     {
       query: `
         {

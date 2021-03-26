@@ -1,6 +1,6 @@
-import LendingPoolAbi from './abi/LendingPool.abi.json';
-import ATokenAbi from './abi/AToken.abi.json';
-import { getContractAddress, getReserves } from './address';
+import LendingPoolAbi from "./abi/LendingPool.abi.json";
+import ATokenAbi from "./abi/AToken.abi.json";
+import { getContractAddress, getReserves, isSupportedNetwork } from "./address";
 import {
   approveErc20IfNeeded,
   denormalizeAmount,
@@ -9,13 +9,13 @@ import {
   getWeb3,
   normalizeAmount,
   promisifyBatchRequest,
-} from '../common';
+} from "../common";
 
 const GAS_LIMIT = 750000;
-const PENDING_CALLBACK_PLATFORM = 'aave';
+const PENDING_CALLBACK_PLATFORM = "aave";
 
 export const getLendingPoolContract = async (web3) => {
-  const lpAddress = await getContractAddress(web3, 'LendingPool');
+  const lpAddress = await getContractAddress(web3, "LendingPool");
   return new web3.eth.Contract(LendingPoolAbi, lpAddress);
 };
 
@@ -25,7 +25,6 @@ const getTrxOverrides = async (options) => {
     nonce: options.nonce,
   };
 };
-
 
 export async function getAddress(contractName) {
   return getContractAddress(await getWeb3(), contractName);
@@ -37,7 +36,7 @@ export const getSupportedAssets = async () => {
 };
 
 export async function deposit(asset, amount, options = {}) {
-  const referralCode = options.referralCode || '0';
+  const referralCode = options.referralCode || "0";
   const nAmount = normalizeAmount(asset, amount);
 
   const assetAddress = await this.getAddress(asset);
@@ -49,7 +48,7 @@ export async function deposit(asset, amount, options = {}) {
   const lp = await getLendingPoolContract(web3);
   const trxOverrides = getTrxOverrides(options);
 
-  if (asset === 'ETH') {
+  if (asset === "ETH") {
     // Gas cost on Ropsten: 230000+
     return lp.methods.deposit(assetAddress, nAmount, referralCode).send(
       {
@@ -60,7 +59,7 @@ export async function deposit(asset, amount, options = {}) {
       },
       getPendingTrxCallback(options.pendingCallback, {
         platform: PENDING_CALLBACK_PLATFORM,
-        type: 'deposit',
+        type: "deposit",
         assets: [{
           symbol: asset,
           amount: amount,
@@ -68,7 +67,7 @@ export async function deposit(asset, amount, options = {}) {
       }),
     );
   } else {
-    const lpCoreAddress = await this.getAddress('LendingPoolCore');
+    const lpCoreAddress = await this.getAddress("LendingPoolCore");
 
     await approveErc20IfNeeded(
       web3,
@@ -101,7 +100,7 @@ export async function deposit(asset, amount, options = {}) {
       },
       getPendingTrxCallback(options.pendingCallback, {
         platform: PENDING_CALLBACK_PLATFORM,
-        type: 'deposit',
+        type: "deposit",
         assets: [{
           symbol: asset,
           amount: amount,
@@ -114,7 +113,7 @@ export async function deposit(asset, amount, options = {}) {
 export async function withdraw(asset, amount, options = {}) {
   const nAmount = normalizeAmount(asset, amount);
 
-  const aTokenAddress = await this.getAddress('a' + asset);
+  const aTokenAddress = await this.getAddress("a" + asset);
   if (!aTokenAddress) {
     throw new Error(`Failed to get 'a${asset}' contract address`);
   }
@@ -131,7 +130,7 @@ export async function withdraw(asset, amount, options = {}) {
     },
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
-      type: 'withdraw',
+      type: "withdraw",
       assets: [{
         symbol: asset,
         amount: amount,
@@ -142,6 +141,10 @@ export async function withdraw(asset, amount, options = {}) {
 
 export async function getBalance(address = null) {
   const web3 = await getWeb3();
+
+  if (!await isSupportedNetwork(web3)) {
+    return {};
+  }
 
   if (!address) {
     address = getCurrentAccountAddress(web3);

@@ -11,6 +11,7 @@ module.exports = {
   },
   "rules": {
     "semi": ["error", "always"],
+    "quotes": ["warn", "double"],
     "no-console": "warn"
   }
 };

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { contractAddresses, supportedNetworks } from './constants';
+import { contractAddresses } from "./constants";
 import {
   approveErc20IfNeeded,
   getCurrentAccountAddress,
@@ -9,27 +9,34 @@ import {
   getWeb3,
   normalizeAmount,
   denormalizeAmount,
-} from '../common';
+  processWeb3OrNetworkArgument,
+} from "../common";
 
 const DEFAULT_MAX_SLIPPAGE = 0.02;
 const GAS_LIMIT = 1000000;
-const PENDING_CALLBACK_PLATFORM = '1inch';
+const PENDING_CALLBACK_PLATFORM = "1inch";
 
 const inchRestApi = axios.create({
-  baseURL: 'https://api.1inch.exchange/v2.0',
+  baseURL: "https://api.1inch.exchange/v2.0",
 });
 
-const getContractAddress = async (web3, contractName) => {
-  const { chainId } = await getNetwork(web3);
+export const isSupportedNetwork = async (web3OrNetwork) => {
+  const network = await processWeb3OrNetworkArgument(web3OrNetwork);
+  return Boolean(contractAddresses[network.name]);
+};
 
-  const name = supportedNetworks[chainId];
-  if (!name) {
-    throw new Error(`Network with chainId=${chainId} is not supported!`);
+const getContractAddress = async (web3, contractName) => {
+  const network = await getNetwork(web3);
+
+  if (!await isSupportedNetwork(network)) {
+    throw new Error(`Network with chainId=${network.chainId} is not supported!`);
   }
 
-  const address = contractAddresses[name][contractName];
+  const address = contractAddresses[network.name][contractName];
   if (!address) {
-    throw new Error(`Unknown contract: '${contractName}' on '${name}' network`);
+    throw new Error(
+      `Unknown contract: '${contractName}' on '${network.name}' network`
+    );
   }
 
   return address;
@@ -44,7 +51,7 @@ export const estimateSwap = async (fromAssetSymbol, fromAmount, toAssetSymbol) =
 
   let res = null;
   try {
-    res = await inchRestApi.get('quote', {
+    res = await inchRestApi.get("quote", {
       params: {
         fromTokenAddress: fromAssetAddress,
         toTokenAddress: toAssetAddress,
@@ -78,9 +85,9 @@ export const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options =
   const trxOverrides = getTrxOverrides(options);
   const fromAssetAddress = await getContractAddress(web3, fromAssetSymbol);
   const toAssetAddress = await getContractAddress(web3, toAssetSymbol);
-  const exchangeAddress = await getContractAddress(web3, '1inch-exchange');
+  const exchangeAddress = await getContractAddress(web3, "1inch-exchange");
 
-  if (fromAssetSymbol !== 'ETH') {
+  if (fromAssetSymbol !== "ETH") {
     await approveErc20IfNeeded(
       web3,
       fromAssetAddress,
@@ -110,7 +117,7 @@ export const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options =
 
   let res = null;
   try {
-    res = await inchRestApi.get('swap', {
+    res = await inchRestApi.get("swap", {
       params: {
         fromTokenAddress: fromAssetAddress,
         toTokenAddress: toAssetAddress,
@@ -144,11 +151,11 @@ export const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options =
       gas: GAS_LIMIT,
       ...trxOverrides,
     })
-    .once('transactionHash', (hash) => {
+    .once("transactionHash", (hash) => {
       if (options.pendingCallback) {
         options.pendingCallback({
           platform: PENDING_CALLBACK_PLATFORM,
-          type: 'swap',
+          type: "swap",
           assets: [{
             symbol: fromAssetSymbol,
             amount: fromAmount,
@@ -157,7 +164,7 @@ export const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options =
         });
       }
     })
-    .once('receipt', resolve)
-    .once('error', reject);
+    .once("receipt", resolve)
+    .once("error", reject);
   });
 };

@@ -1,5 +1,5 @@
-import BigNumber from 'bignumber.js';
-import swapAbi from './swap.abi.json';
+import BigNumber from "bignumber.js";
+import swapAbi from "./swap.abi.json";
 import {
   approveErc20IfNeeded,
   getCurrentAccountAddress,
@@ -9,32 +9,38 @@ import {
   getWeb3,
   erc20Abi,
   denormalizeAmount,
-} from '../common';
-import * as compoundApi from '../compound';
+  processWeb3OrNetworkArgument,
+} from "../common";
+import * as compoundApi from "../compound";
 
 const GAS_LIMIT = 250000;
 // Deposit to Curve can take 560000+ gas (on ganache at least)
 const GAS_LIMIT_DEPOSIT_WITHDRAW = 600000;
 const FEE = 0.0002;
 const DEFAULT_MAX_SLIPPAGE = 0.01;
-const PENDING_CALLBACK_PLATFORM = 'curve';
+const PENDING_CALLBACK_PLATFORM = "curve";
 
 const addresses = {
   assets: {
-    DAI: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
-    USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
   },
   contracts: {
-    swap: '0xA2B47E3D5c44877cca798226B7B8118F9BFb7A56',
-    token: '0x845838DF265Dcd2c412A1Dc9e959c7d08537f8a2',
+    swap: "0xA2B47E3D5c44877cca798226B7B8118F9BFb7A56",
+    token: "0x845838DF265Dcd2c412A1Dc9e959c7d08537f8a2",
   }
 };
 
-const swapTokenSymbol = 'cDAI+cUSDC';
+const swapTokenSymbol = "cDAI+cUSDC";
+
+export const isSupportedNetwork = async (web3OrNetwork) => {
+  const network = await processWeb3OrNetworkArgument(web3OrNetwork);
+  return network.name === "mainnet";
+};
 
 const assertSupportedChain = async (web3) => {
   const network = await getNetwork(web3);
-  if (network.name !== 'mainnet') {
+  if (!await isSupportedNetwork(network)) {
     throw new Error(`Network chainId=${network.chainId} is not supported!`);
   }
 };
@@ -46,17 +52,17 @@ export const addLiquidity = async (
   assetBAmount,
   options = {},
 ) => {
-  if (assetA === 'cDAI' && assetB === 'cUSDC') {
+  if (assetA === "cDAI" && assetB === "cUSDC") {
     // Skip - all is ok
-  } else if (assetA === 'cUSDC' && assetB === 'cDAI') {
+  } else if (assetA === "cUSDC" && assetB === "cDAI") {
     [assetA, assetB] = [assetB, assetA];
     [assetAAmount, assetBAmount] = [assetBAmount, assetAAmount];
   } else {
-    throw new Error('Only cDAI/cUSDC pair supported by Curve-Compound');
+    throw new Error("Only cDAI/cUSDC pair supported by Curve-Compound");
   }
 
   if (assetAAmount <= 0 && assetBAmount <= 0) {
-    throw new Error('At least one asset amount should be above zero');
+    throw new Error("At least one asset amount should be above zero");
   }
 
   const web3 = await getWeb3();
@@ -153,7 +159,7 @@ export const addLiquidity = async (
     },
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
-      type: 'add liquidity',
+      type: "add liquidity",
       assets: assets.map((asset) => ({
         symbol: asset.symbol,
         amount: asset.amount,
@@ -164,10 +170,13 @@ export const addLiquidity = async (
 
 export const getAccountLiquidityAll = async (accountAddress = null) => {
   const web3 = await getWeb3();
-  await assertSupportedChain(web3);
 
   if (!accountAddress) {
     accountAddress = getCurrentAccountAddress(web3);
+  }
+
+  if (!await isSupportedNetwork(web3)) {
+    return [];
   }
 
   const swapContractAddress = addresses.contracts.swap;
@@ -185,8 +194,8 @@ export const getAccountLiquidityAll = async (accountAddress = null) => {
   const swapTokenSupply = await swapTokenContract.methods.totalSupply().call();
 
   const tokens = [
-    { index: 0, symbol: 'DAI' },
-    { index: 1, symbol: 'USDC' },
+    { index: 0, symbol: "DAI" },
+    { index: 1, symbol: "USDC" },
   ];
 
   await Promise.all(
@@ -244,20 +253,20 @@ export const getAccountLiquidityAll = async (accountAddress = null) => {
   }
 
   return [{
-    'DAI': tokens[0].balance.toFixed(),
-    'USDC': tokens[1].balance.toFixed(),
-    assetA: 'DAI',
-    assetB: 'USDC',
+    "DAI": tokens[0].balance.toFixed(),
+    "USDC": tokens[1].balance.toFixed(),
+    assetA: "DAI",
+    assetB: "USDC",
   }];
 };
 
 export const removeLiquidity = async (assetA, assetB, percent, options = {}) => {
-  if (assetA === 'cDAI' && assetB === 'cUSDC') {
+  if (assetA === "cDAI" && assetB === "cUSDC") {
     // Skip - all is ok
-  } else if (assetA === 'cUSDC' && assetB === 'cDAI') {
+  } else if (assetA === "cUSDC" && assetB === "cDAI") {
     [assetA, assetB] = [assetB, assetA];
   } else {
-    throw new Error('Only cDAI/cUSDC pair supported by Curve-Compound');
+    throw new Error("Only cDAI/cUSDC pair supported by Curve-Compound");
   }
 
   const web3 = await getWeb3();
@@ -277,8 +286,8 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
   const swapContract = new web3.eth.Contract(swapAbi, swapContractAddress);
 
   const assets = [
-    { index: 0, symbol: 'DAI' },
-    { index: 1, symbol: 'USDC' },
+    { index: 0, symbol: "DAI" },
+    { index: 1, symbol: "USDC" },
   ];
 
   const slippage = options.slippage || DEFAULT_MAX_SLIPPAGE;
@@ -332,7 +341,7 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
     },
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
-      type: 'remove liquidity',
+      type: "remove liquidity",
       assets: assets.map((asset) => ({
         symbol: asset.symbol,
         amount: denormalizeAmount(asset.symbol, asset.minReturn),

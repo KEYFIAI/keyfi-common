@@ -1,24 +1,24 @@
-import 'dotenv/config';
-import api from '..';
-import erc20abi from '../common/erc20.abi.json';
+import "dotenv/config";
+import api from "..";
+import erc20abi from "../common/erc20.abi.json";
 
 const main = async () => {
   const web3 = await api.getWeb3();
   const lpContract = await api.aave.getLendingPoolContract(web3);
-  console.log('address', lpContract.address);
+  console.log("address", lpContract.address);
   const reservesAddresses = await lpContract.methods.getReserves().call();
 
   const info = {
     contracts: {
-      'ETH': '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+      "ETH": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
     },
     decimals: {
-      'ETH': 18,
+      "ETH": 18,
     },
   };
 
   for (const reserveAddress of reservesAddresses) {
-    if (reserveAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+    if (reserveAddress === "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE") {
       continue;
     }
 
