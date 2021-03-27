@@ -402,7 +402,7 @@ export const getAccountLiquidityAll = async (address = null) => {
   const web3 = await getWeb3();
 
   if (!await isSupportedNetwork(web3)) {
-    return {};
+    return [];
   }
 
   if (!address) {
