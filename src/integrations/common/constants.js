@@ -61,7 +61,10 @@ export const erc20Addresses = {
   },
   "bsc-testnet": {
     "KEYFI": "0x2bA8E0794B99B9Fe7236FD25aE943563F1F1f50a",
-  }
+  },
+  "bsc-mainnet": {
+    "KEYFI": "0x4b6000F9163de2E3f0a01eC37E06e1469DBbcE9d",
+  },
 };
 
 export const decimals = {

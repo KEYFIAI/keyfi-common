@@ -13,4 +13,8 @@ export const contractAddresses = {
     RewardPool: "0xE93e1c89923e5D5025565064986E68509AB13487",
     KEYFI: "0x2bA8E0794B99B9Fe7236FD25aE943563F1F1f50a",
   },
+  "bsc-mainnet": {
+    RewardPool: "0x4F422035D5e6237Be2BD3dFce55D1D97eaE4296A",
+    KEYFI: "0x4b6000F9163de2E3f0a01eC37E06e1469DBbcE9d",
+  },
 };
