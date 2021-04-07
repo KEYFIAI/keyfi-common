@@ -78,8 +78,9 @@ export const getBalance = async (accountAddress = null, options = {}) => {
 
     const result = await cTokenContract.methods.balanceOf(accountAddress).call();
 
+    const network = await getNetwork(web3);
     const originalToken = cTokenSymbol.slice(1);
-    const cTokenBalance = denormalizeAmount(originalToken, result);
+    const cTokenBalance = denormalizeAmount(network, originalToken, result);
 
     if (cTokenBalance > 0) {
       const rate = await cTokenContract.methods.exchangeRateCurrent().call();
@@ -97,9 +98,9 @@ export const getBalance = async (accountAddress = null, options = {}) => {
 };
 
 export const deposit = async (asset, amount, options = {}) => {
-  const nAmount = normalizeAmount(asset, amount);
-
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
 
   const balance = asset === "ETH"
     ? await getBalanceEth()
@@ -179,9 +180,9 @@ export const deposit = async (asset, amount, options = {}) => {
 };
 
 export const withdraw = async (asset, amount, options = {}) => {
-  const nAmount = normalizeAmount(asset, amount);
-
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
 
   const assetBalance = await getBalance(null, { cTokens: [`c${asset}`] });
   if (BigNumber(assetBalance[asset]).lt(amount)) {

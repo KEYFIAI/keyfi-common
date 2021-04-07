@@ -49,6 +49,7 @@ const getContractAddress = async (web3, contractName) => {
 
 export const getBalance = async (accountAddress = null) => {
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
 
   if (!await isSupportedNetwork(web3)) {
     return {};
@@ -71,6 +72,7 @@ export const getBalance = async (accountAddress = null) => {
 
   for (const symbol of supportedAssets) {
     balance[symbol] = denormalizeAmount(
+      network,
       symbol,
       weiBalance[
         symbol === "ETH" ? marketId.WETH : marketId[symbol]
@@ -86,9 +88,9 @@ export const deposit = async (asset, amount, options = {}) => {
     throw new Error(`Asset ${asset} is not supported`);
   }
 
-  const nAmount = normalizeAmount(asset, amount);
-
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
   const trxOverrides = getTrxOverrides(options);
   const accountAddress = await getCurrentAccountAddress(web3);
 
@@ -177,9 +179,9 @@ export const withdraw = async (asset, amount, options = {}) => {
     throw new Error(`Asset ${asset} is not supported`);
   }
 
-  const nAmount = normalizeAmount(asset, amount);
-
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
   const trxOverrides = getTrxOverrides(options);
   const accountAddress = await getCurrentAccountAddress(web3);
 

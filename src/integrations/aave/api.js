@@ -6,6 +6,7 @@ import {
   denormalizeAmount,
   getCurrentAccountAddress,
   getPendingTrxCallback,
+  getNetwork,
   getWeb3,
   normalizeAmount,
   promisifyBatchRequest,
@@ -37,14 +38,15 @@ export const getSupportedAssets = async () => {
 
 export async function deposit(asset, amount, options = {}) {
   const referralCode = options.referralCode || "0";
-  const nAmount = normalizeAmount(asset, amount);
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
 
   const assetAddress = await this.getAddress(asset);
   if (!assetAddress) {
     throw new Error(`Asset is not supported: '${asset}'`);
   }
 
-  const web3 = await getWeb3();
   const lp = await getLendingPoolContract(web3);
   const trxOverrides = getTrxOverrides(options);
 
@@ -111,14 +113,15 @@ export async function deposit(asset, amount, options = {}) {
 }
 
 export async function withdraw(asset, amount, options = {}) {
-  const nAmount = normalizeAmount(asset, amount);
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
 
   const aTokenAddress = await this.getAddress("a" + asset);
   if (!aTokenAddress) {
     throw new Error(`Failed to get 'a${asset}' contract address`);
   }
 
-  const web3 = await getWeb3();
   const aTokenContract = new web3.eth.Contract(ATokenAbi, aTokenAddress);
 
   // Gas cost on Ropsten: 530000+
@@ -141,8 +144,9 @@ export async function withdraw(asset, amount, options = {}) {
 
 export async function getBalance(address = null) {
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
 
-  if (!await isSupportedNetwork(web3)) {
+  if (!await isSupportedNetwork(network)) {
     return {};
   }
 
@@ -164,6 +168,7 @@ export async function getBalance(address = null) {
       );
       return p.then((result) => {
         balance[reserveSymbol] = denormalizeAmount(
+          network,
           reserveSymbol,
           result.currentATokenBalance,
         );

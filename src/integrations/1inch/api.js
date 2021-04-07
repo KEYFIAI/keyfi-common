@@ -43,9 +43,10 @@ const getContractAddress = async (web3, contractName) => {
 };
 
 export const estimateSwap = async (fromAssetSymbol, fromAmount, toAssetSymbol) => {
-  fromAmount = normalizeAmount(fromAssetSymbol, fromAmount);
-
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  fromAmount = normalizeAmount(network, fromAssetSymbol, fromAmount);
+
   const fromAssetAddress = await getContractAddress(web3, fromAssetSymbol);
   const toAssetAddress = await getContractAddress(web3, toAssetSymbol);
 
@@ -74,14 +75,19 @@ export const estimateSwap = async (fromAssetSymbol, fromAmount, toAssetSymbol) =
   const { toTokenAmount } = res.data;
   return {
     returnAmount: toTokenAmount,
-    returnAmountHuman: denormalizeAmount(toAssetSymbol,toTokenAmount),
+    returnAmountHuman: denormalizeAmount(network, toAssetSymbol,toTokenAmount),
   };
 };
 
 export const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options = {}) => {
-  const fromAmountDecimalized = normalizeAmount(fromAssetSymbol, fromAmount);
-
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const fromAmountDecimalized = normalizeAmount(
+    network,
+    fromAssetSymbol,
+    fromAmount,
+  );
+
   const trxOverrides = getTrxOverrides(options);
   const fromAssetAddress = await getContractAddress(web3, fromAssetSymbol);
   const toAssetAddress = await getContractAddress(web3, toAssetSymbol);

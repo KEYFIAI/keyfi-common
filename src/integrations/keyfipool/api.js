@@ -56,8 +56,9 @@ export const getSupportedAssets = async (web3) => {
 
 export const getBalance = async (accountAddress = null, options = {}) => {
   const web3 = options.web3 ? options.web3 : await getWeb3();
+  const network = await getNetwork(web3);
 
-  if (!await isSupportedNetwork(web3)) {
+  if (!await isSupportedNetwork(network)) {
     return {};
   }
 
@@ -76,7 +77,7 @@ export const getBalance = async (accountAddress = null, options = {}) => {
       assetAddress,
     ).call();
 
-    balances[asset] = denormalizeAmount(asset, assetBalance);
+    balances[asset] = denormalizeAmount(network, asset, assetBalance);
   }
 
   return balances;
@@ -90,6 +91,7 @@ export const getBalance = async (accountAddress = null, options = {}) => {
  */
 export const getStaked = async (accountAddress) => {
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
   const balance = await getBalance(accountAddress, { web3 });
 
   if (BigNumber(balance.KEYFIUSDCLP).gt(0)) {
@@ -100,7 +102,7 @@ export const getStaked = async (accountAddress) => {
       "USDC",
       "KEYFI",
       null,
-      { balance: normalizeAmount("KEYFIUSDCLP", pairBalance) }
+      { balance: normalizeAmount(network, "KEYFIUSDCLP", pairBalance) }
     );
 
     balance.KEYFI =
@@ -113,9 +115,9 @@ export const getStaked = async (accountAddress) => {
 };
 
 export const deposit = async (asset, amount, options = {}) => {
-  const nAmount = normalizeAmount(asset, amount);
-
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
 
   const assetAddress = await getContractAddress(web3, asset);
   const poolAddress = await getContractAddress(web3, "RewardPool");
@@ -162,9 +164,9 @@ export const deposit = async (asset, amount, options = {}) => {
 };
 
 export const withdraw = async (asset, amount, options = {}) => {
-  const nAmount = normalizeAmount(asset, amount);
-
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
 
   const assetAddress = await getContractAddress(web3, asset);
   const poolAddress = await getContractAddress(web3, "RewardPool");
@@ -235,6 +237,7 @@ export const withdrawReward = async (asset, options = {}) => {
 
 export const getRewards = async (accountAddress = null) => {
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
 
   if (!accountAddress) {
     accountAddress = getCurrentAccountAddress(web3);
@@ -252,7 +255,7 @@ export const getRewards = async (accountAddress = null) => {
       accountAddress,
     ).call();
 
-    rewards[asset] = denormalizeAmount(asset, assetReward);
+    rewards[asset] = denormalizeAmount(network, asset, assetReward);
   }
 
   return rewards;

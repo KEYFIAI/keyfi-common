@@ -38,8 +38,7 @@ export const isSupportedNetwork = async (web3OrNetwork) => {
   return network.name === "mainnet";
 };
 
-const assertSupportedChain = async (web3) => {
-  const network = await getNetwork(web3);
+const assertSupportedChain = async (network) => {
   if (!await isSupportedNetwork(network)) {
     throw new Error(`Network chainId=${network.chainId} is not supported!`);
   }
@@ -66,7 +65,8 @@ export const addLiquidity = async (
   }
 
   const web3 = await getWeb3();
-  await assertSupportedChain(web3);
+  const network = await getNetwork(web3);
+  await assertSupportedChain(network);
 
   const assets = [{
     symbol: assetA,
@@ -89,6 +89,7 @@ export const addLiquidity = async (
       asset.underlyingSymbol = asset.symbol.slice(1);
 
       const denormalizedRate = denormalizeAmount(
+        network,
         asset.underlyingSymbol,
         BigNumber(asset.exchangeRate)
           .shiftedBy(-compoundApi.EXCHANGE_RATE_DECIMALS)
@@ -175,7 +176,8 @@ export const getAccountLiquidityAll = async (accountAddress = null) => {
     accountAddress = getCurrentAccountAddress(web3);
   }
 
-  if (!await isSupportedNetwork(web3)) {
+  const network = await getNetwork(web3);
+  if (!await isSupportedNetwork(network)) {
     return [];
   }
 
@@ -210,6 +212,7 @@ export const getAccountLiquidityAll = async (accountAddress = null) => {
       );
 
       token.exRate = denormalizeAmount(
+        network,
         token.symbol,
         BigNumber(await cErc20Contract.methods.exchangeRateStored().call())
           .shiftedBy(-compoundApi.EXCHANGE_RATE_DECIMALS),
@@ -311,6 +314,7 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
   const minReturns = assets.map((token) => token.minReturn);
 
   const trxOverrides = getTrxOverrides(options);
+  const network = await getNetwork(web3);
 
   await approveErc20IfNeeded(
     web3,
@@ -327,7 +331,7 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
         platform: PENDING_CALLBACK_PLATFORM,
         assets: [{
           symbol: swapTokenSymbol,
-          amount: denormalizeAmount(swapTokenSymbol, swapTokenAmount),
+          amount: denormalizeAmount(network, swapTokenSymbol, swapTokenAmount),
         }],
       }
     },
@@ -344,7 +348,7 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
       type: "remove liquidity",
       assets: assets.map((asset) => ({
         symbol: asset.symbol,
-        amount: denormalizeAmount(asset.symbol, asset.minReturn),
+        amount: denormalizeAmount(network, asset.symbol, asset.minReturn),
       })),
     }),
   );
@@ -352,7 +356,8 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
 
 export const getSupportedAssets = async () => {
   const web3 = await getWeb3();
-  await assertSupportedChain(web3);
+  const network = await getNetwork(web3);
+  await assertSupportedChain(network);
 
   return addresses.assets;
 };

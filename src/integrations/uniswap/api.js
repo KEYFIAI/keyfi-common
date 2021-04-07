@@ -181,9 +181,9 @@ export const estimateSwap = async (
   fromAmount,
   toAssetSymbol,
 ) => {
-  fromAmount = normalizeAmount(fromAssetSymbol, fromAmount);
-
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  fromAmount = normalizeAmount(network, fromAssetSymbol, fromAmount);
 
   const routerAddress = await getContractAddress(web3, "Router02");
   const routerContract = new web3.eth.Contract(routerAbi, routerAddress);
@@ -202,7 +202,7 @@ export const estimateSwap = async (
 
   return {
     returnAmount: resultLast,
-    returnAmountHuman: denormalizeAmount(toAssetSymbol, resultLast),
+    returnAmountHuman: denormalizeAmount(network, toAssetSymbol, resultLast),
     route,
   };
 };
@@ -213,14 +213,19 @@ export const swap = async (
   toAssetSymbol,
   estimation,
   options = {}
-) => {
-  const fromAmountDecimalized = normalizeAmount(fromAssetSymbol, fromAmount);
+  ) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const fromAmountDecimalized = normalizeAmount(
+    network,
+    fromAssetSymbol,
+    fromAmount
+  );
 
   if (!estimation || !estimation.returnAmount) {
     throw new Error("No estimation have passed as arg!");
   }
 
-  const web3 = await getWeb3();
   const accountAddress = getCurrentAccountAddress(web3);
   const trxOverrides = getTrxOverrides(options);
   const routeAddresses = await Promise.all(
@@ -332,9 +337,11 @@ export const getLiquidity = async (assetA, assetB, options = {}) => {
     };
   }
 
+  const network = await getNetwork(web3);
+
   return {
-    [assetA]: denormalizeAmount(assetA, result._reserve0),
-    [assetB]: denormalizeAmount(assetB, result._reserve1),
+    [assetA]: denormalizeAmount(network, assetA, result._reserve0),
+    [assetB]: denormalizeAmount(network, assetB, result._reserve1),
     blockTimestampLast: result._blockTimestampLast,
   };
 };
@@ -383,16 +390,18 @@ export const getAccountLiquidity = async (
     };
   }
 
+  const network = await getNetwork(web3);
+
   return {
     assetA,
     assetB,
     [assetA]: liquidityPercent.multipliedBy(
-      denormalizeAmount(assetA, pairLiquidity[assetA]),
+      denormalizeAmount(network, assetA, pairLiquidity[assetA]),
     ).toFixed(),
     [assetB]: liquidityPercent.multipliedBy(
-      denormalizeAmount(assetB, pairLiquidity[assetB]),
+      denormalizeAmount(network, assetB, pairLiquidity[assetB]),
     ).toFixed(),
-    liquidity: denormalizeAmount("UNI-V2", balance),
+    liquidity: denormalizeAmount(network, "UNI-V2", balance),
     totalLiquidity: totalSupply,
     liquidityPercent: liquidityPercent.toFixed(),
   };
@@ -473,10 +482,11 @@ export const addLiquidity = async (
     [assetA, assetB] = [assetB, assetA];
   }
 
-  const assetAAmountNorm = normalizeAmount(assetA, assetAAmount);
-  const assetBAmountNorm = normalizeAmount(assetB, assetBAmount);
-
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const assetAAmountNorm = normalizeAmount(network, assetA, assetAAmount);
+  const assetBAmountNorm = normalizeAmount(network, assetB, assetBAmount);
+
   const account = getCurrentAccountAddress(web3);
   const routerAddress = await getContractAddress(web3, "Router02");
   const assetAAddress = await getAssetAddress(web3, assetA);
@@ -623,6 +633,8 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
   const pairAddress = await getPairAddress(web3, assetAAddress, assetBAddress);
   const trxOverrides = getTrxOverrides(options);
 
+  const network = await getNetwork(web3);
+
   await approveErc20IfNeeded(
     web3,
     pairAddress,
@@ -638,7 +650,7 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
         platform: PENDING_CALLBACK_PLATFORM,
         assets: [{
           symbol: "UNI-V2",
-          amount: denormalizeAmount("UNI-V2", liquidityToBurn),
+          amount: denormalizeAmount(network, "UNI-V2", liquidityToBurn),
         }],
       }
     },
@@ -681,10 +693,10 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
         type: "remove liquidity",
         assets: [{
           symbol: assetA,
-          amount: denormalizeAmount(assetA, minReturnA),
+          amount: denormalizeAmount(network, assetA, minReturnA),
         }, {
           symbol: assetB,
-          amount: denormalizeAmount(assetB, minReturnB),
+          amount: denormalizeAmount(network, assetB, minReturnB),
         }],
       }),
     );
@@ -709,10 +721,10 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
       type: "remove liquidity",
       assets: [{
         symbol: assetA,
-        amount: denormalizeAmount(assetA, minReturnA),
+        amount: denormalizeAmount(network, assetA, minReturnA),
       }, {
         symbol: assetB,
-        amount: denormalizeAmount(assetB, minReturnB),
+        amount: denormalizeAmount(network, assetB, minReturnB),
       }],
     }),
   );

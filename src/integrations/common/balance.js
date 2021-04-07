@@ -62,7 +62,7 @@ export const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
       contract.methods.balanceOf(holderAddress).call.request,
     );
     promises.push(
-      symbol ? promise.then((b) => denormalizeAmount(symbol, b)) : promise,
+      symbol ? promise.then((b) => denormalizeAmount(net, symbol, b)) : promise,
     );
   }
 
@@ -82,8 +82,9 @@ export const getBalanceEth = async (holderAddress) => {
     holderAddress = getCurrentAccountAddress(web3);
   }
 
+  const network = await getNetwork(web3);
   const balance = await web3.eth.getBalance(holderAddress);
-  return denormalizeAmount("ETH", balance);
+  return denormalizeAmount(network, "ETH", balance);
 };
 
 const ZERO_USD_PRICE_TOKENS = ["KEYFI", "KEYFIUSDCLP"];
