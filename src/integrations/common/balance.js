@@ -87,7 +87,7 @@ export const getBalanceEth = async (holderAddress) => {
   return denormalizeAmount(network, "ETH", balance);
 };
 
-const ZERO_USD_PRICE_TOKENS = ["KEYFI", "KEYFIUSDCLP"];
+const ZERO_USD_PRICE_TOKENS = ["KEYFI", "KEYFIUSDCLP", "KEYFIBUSD_LP"];
 
 export const getUsdPrice = async (assetOrAssets) => {
   let assets = assetOrAssets;

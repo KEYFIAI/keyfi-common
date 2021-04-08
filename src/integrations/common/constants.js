@@ -482,5 +482,6 @@ export const coingeckoAssetsIds = {
   SXP: "swipe",
   UBT: "unibright",
   UNI: "universe-token",
+  wBNB: "wbnb",
   XOR: "sora",
 };
