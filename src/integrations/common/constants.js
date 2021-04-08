@@ -269,6 +269,7 @@ export const decimals = {
     "XOR": 18
   },
   "bsc-mainnet": {
+    "ETH": 18,
     "KEYFI": 18,
     "ADA": 18,
     "ALICE": 6,
@@ -315,7 +316,6 @@ export const decimals = {
     "DUSK": 18,
     "EGLD": 18,
     "EOS": 18,
-    "ETH": 18,
     "FIL": 18,
     "FOR": 18,
     "FRONT": 18,
@@ -379,6 +379,7 @@ export const decimals = {
     "ZIL": 12,
   },
   "bsc-testnet": {
+    "ETH": 18,
     "KEYFI": 18,
     "ADA": 18,
     "ATOM": 18,
