@@ -483,6 +483,6 @@ export const coingeckoAssetsIds = {
   UBT: "unibright",
   UNI: "universe-token",
   wBNB: "wbnb",
-  BNB: "binance-coin",
+  BNB: "wbnb",
   XOR: "sora",
 };
