@@ -1,5 +1,5 @@
-import rewardPoolAbi from "@keyfi/keyfi-common/src/integrations/keyfipool/reward-pool-v2.abi";
-import { contractAddressesv2 } from "@keyfi/keyfi-common/src/integrations/keyfipool/constants";
+import rewardPoolAbi from "./reward-pool-v2.abi";
+import { contractAddressesv2 } from "./constants";
 import {
   approveErc20IfNeeded,
   getCurrentAccountAddress,
@@ -10,7 +10,7 @@ import {
   normalizeAmount,
   denormalizeAmount,
   processWeb3OrNetworkArgument,
-} from "@keyfi/keyfi-common/src/integrations/common";
+} from "../common";
 
 const GAS_LIMIT = 250000;
 const PENDING_CALLBACK_PLATFORM = "keyfi rewardpool";
