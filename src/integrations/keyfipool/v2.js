@@ -1,0 +1,222 @@
+import BigNumber from "bignumber.js";
+import rewardPoolAbi from "./reward-pool.abi.json";
+import { contractAddresses } from "./constants";
+import { isSupportedNetwork, getSupportedAssets } from "./api";
+import {
+  approveErc20IfNeeded,
+  getCurrentAccountAddress,
+  getNetwork,
+  getPendingTrxCallback,
+  getTrxOverrides,
+  getWeb3,
+  normalizeAmount,
+  denormalizeAmount,
+  processWeb3OrNetworkArgument,
+} from "../common";
+
+const GAS_LIMIT = 250000;
+const PENDING_CALLBACK_PLATFORM = "keyfi rewardpool";
+
+const getContractAddress = async (web3, contractName) => {
+  const network = await getNetwork(web3);
+
+  if (!(await isSupportedNetwork(network))) {
+    throw new Error(
+      `Network with chainId=${network.chainId} is not supported!`
+    );
+  }
+
+  const address = contractAddresses[network.name][contractName];
+  if (!address) {
+    throw new Error(
+      `Unknown contract: '${contractName}' on '${network.name}' network`
+    );
+  }
+
+  return address;
+};
+
+export const getBalancev2 = async (accountAddress = null, options = {}) => {
+  const web3 = options.web3 ? options.web3 : await getWeb3();
+  const network = await getNetwork(web3);
+
+  if (!(await isSupportedNetwork(network))) {
+    return {};
+  }
+
+  if (!accountAddress) {
+    accountAddress = getCurrentAccountAddress(web3);
+  }
+
+  const poolAddress = await getContractAddress(web3, "RewardPoolv2");
+  const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
+
+  const balances = {};
+  for (const asset of await getSupportedAssets(web3)) {
+    const assetAddress = await getContractAddress(web3, asset);
+
+    const assetBalance = await poolContract.methods
+      .getBalance(assetAddress)
+      .call();
+
+    balances[asset] = denormalizeAmount(network, asset, assetBalance);
+  }
+
+  return balances;
+};
+
+export const depositv2 = async (asset, amount, options = {}) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
+
+  const assetAddress = await getContractAddress(web3, asset);
+  const poolAddress = await getContractAddress(web3, "RewardPoolv2");
+  const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
+  const trxOverrides = getTrxOverrides(options);
+
+  await approveErc20IfNeeded(
+    web3,
+    assetAddress,
+    poolAddress,
+    nAmount,
+    {
+      gas: GAS_LIMIT,
+      ...trxOverrides,
+    },
+    {
+      pendingCallbackParams: {
+        callback: options.pendingCallback,
+        platform: PENDING_CALLBACK_PLATFORM,
+        assets: [
+          {
+            symbol: asset,
+            amount,
+          },
+        ],
+      },
+    }
+  );
+
+  return poolContract.methods.deposit(assetAddress, nAmount).send(
+    {
+      from: getCurrentAccountAddress(web3),
+      gas: GAS_LIMIT,
+      ...trxOverrides,
+      nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
+    },
+    getPendingTrxCallback(options.pendingCallback, {
+      platform: PENDING_CALLBACK_PLATFORM,
+      type: "deposit",
+      assets: [
+        {
+          symbol: asset,
+          amount,
+        },
+      ],
+    })
+  );
+};
+
+export const withdrawv2 = async (asset, amount, options = {}) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
+
+  const assetAddress = await getContractAddress(web3, asset);
+  const poolAddress = await getContractAddress(web3, "RewardPoolv2");
+  const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
+  const trxOverrides = getTrxOverrides(options);
+
+  return poolContract.methods.withdraw(assetAddress, nAmount).send(
+    {
+      from: getCurrentAccountAddress(web3),
+      gas: GAS_LIMIT,
+      ...trxOverrides,
+      nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
+    },
+    getPendingTrxCallback(options.pendingCallback, {
+      platform: PENDING_CALLBACK_PLATFORM,
+      type: "withdraw",
+      assets: [
+        {
+          symbol: asset,
+          amount,
+        },
+      ],
+    })
+  );
+};
+
+export const withdrawRewardv2 = async (asset, options = {}) => {
+  const web3 = await getWeb3();
+
+  const assetAddress = await getContractAddress(web3, asset);
+  const poolAddress = await getContractAddress(web3, "RewardPoolv2");
+  const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
+  const trxOverrides = getTrxOverrides(options);
+
+  await approveErc20IfNeeded(
+    web3,
+    assetAddress,
+    poolAddress,
+    {
+      gas: GAS_LIMIT,
+      ...trxOverrides,
+    },
+    {
+      pendingCallbackParams: {
+        callback: options.pendingCallback,
+        platform: PENDING_CALLBACK_PLATFORM,
+        assets: [
+          {
+            symbol: asset,
+          },
+        ],
+      },
+    }
+  );
+
+  return poolContract.methods.withdrawRewards(assetAddress).send(
+    {
+      from: getCurrentAccountAddress(web3),
+      gas: GAS_LIMIT,
+      ...trxOverrides,
+      nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
+    },
+    getPendingTrxCallback(options.pendingCallback, {
+      platform: PENDING_CALLBACK_PLATFORM,
+      type: "withdraw_rewards",
+      assets: [
+        {
+          symbol: asset,
+        },
+      ],
+    })
+  );
+};
+
+export const getRewardsv2 = async (accountAddress = null) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+
+  if (!accountAddress) {
+    accountAddress = getCurrentAccountAddress(web3);
+  }
+
+  const poolAddress = await getContractAddress(web3, "RewardPoolv2");
+  const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
+
+  const rewards = {};
+  for (const asset of await getSupportedAssets(web3)) {
+    const assetAddress = await getContractAddress(web3, asset);
+
+    const assetReward = await poolContract.methods
+      .pendingReward(assetAddress, accountAddress)
+      .call();
+
+    rewards[asset] = denormalizeAmount(network, asset, assetReward);
+  }
+
+  return rewards;
+};
