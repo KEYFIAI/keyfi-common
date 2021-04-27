@@ -26,7 +26,7 @@ export const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
   const addresses = erc20Addresses[net.name];
   if (!addresses) {
     throw new Error(
-      `Network chainId=${net.chainId}, name=${net.name} is not supported!`,
+      `Network chainId=${net.chainId}, name=${net.name} is not supported!`
     );
   }
 
@@ -41,13 +41,13 @@ export const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
       const address = addresses[assetOrAddress];
       if (!address) {
         throw new Error(
-          `Cannot find token '${assetOrAddress}' on '${net.name}' network!`,
+          `Cannot find token '${assetOrAddress}' on '${net.name}' network!`
         );
       }
 
       assetsInfo.push({
         contractAddress: address,
-        symbol: assetOrAddress
+        symbol: assetOrAddress,
       });
     }
   }
@@ -59,10 +59,10 @@ export const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
     const contract = new web3.eth.Contract(erc20Abi, contractAddress);
     const promise = promisifyBatchRequest(
       batch,
-      contract.methods.balanceOf(holderAddress).call.request,
+      contract.methods.balanceOf(holderAddress).call.request
     );
     promises.push(
-      symbol ? promise.then((b) => denormalizeAmount(net, symbol, b)) : promise,
+      symbol ? promise.then((b) => denormalizeAmount(net, symbol, b)) : promise
     );
   }
 
@@ -87,7 +87,12 @@ export const getBalanceEth = async (holderAddress) => {
   return denormalizeAmount(network, "ETH", balance);
 };
 
-const ZERO_USD_PRICE_TOKENS = ["KEYFI", "KEYFIUSDCLP", "KEYFIBUSD_LP"];
+const ZERO_USD_PRICE_TOKENS = [
+  "KEYFI",
+  "KEYFIUSDCLP",
+  "KEYFIBUSD_LP",
+  "KEYFIETH_LP",
+];
 
 export const getUsdPrice = async (assetOrAssets) => {
   let assets = assetOrAssets;
@@ -109,9 +114,10 @@ export const getUsdPrice = async (assetOrAssets) => {
   });
 
   const response = await axios.get(
-    `https://api.coingecko.com/api/v3/simple/price?ids=${
-      assets.map((x) => x.coingeckoId).filter((x) => x).join(",")
-    }&vs_currencies=usd`,
+    `https://api.coingecko.com/api/v3/simple/price?ids=${assets
+      .map((x) => x.coingeckoId)
+      .filter((x) => x)
+      .join(",")}&vs_currencies=usd`
   );
 
   assets.forEach((asset) => {
@@ -148,7 +154,7 @@ export const getKeyfiUsdPrice = async () => {
             priceUSD
           }
         }
-      `
+      `,
     }
   );
 
