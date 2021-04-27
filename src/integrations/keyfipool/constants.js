@@ -26,7 +26,7 @@ export const contractAddressesv2 = {
   mainnet: {
     RewardPool: "0x1a9b2708b76E55354146576AD0A7e46CF7E8abbC",
     KEYFI: "0xb8647e90c0645152fccf4d9abb6b59eb4aa99052",
-    ETH_LP: "0x3a417de058cee3640b3fa83f0778e0daaa7bc76e",
+    KEYFIETH_LP: "0x3a417de058cee3640b3fa83f0778e0daaa7bc76e",
     WETH: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
     USDC: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
     WBTC: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
