@@ -198,6 +198,7 @@ export const erc20Addresses = {
 export const decimals = {
   mainnet: {
     ETH: 18,
+    ETH_LP: 18,
     BAT: 18,
     BUSD: 18,
     cBAT: 8,
