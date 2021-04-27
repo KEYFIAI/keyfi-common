@@ -1,7 +1,5 @@
-import BigNumber from "bignumber.js";
-import rewardPoolAbi from "./reward-pool.abi.json";
-import { contractAddresses } from "./constants";
-import { isSupportedNetwork, getSupportedAssets } from "./api";
+import rewardPoolAbi from "@keyfi/keyfi-common/src/integrations/keyfipool/reward-pool-v2.abi";
+import { contractAddressesv2 } from "@keyfi/keyfi-common/src/integrations/keyfipool/constants";
 import {
   approveErc20IfNeeded,
   getCurrentAccountAddress,
@@ -12,10 +10,15 @@ import {
   normalizeAmount,
   denormalizeAmount,
   processWeb3OrNetworkArgument,
-} from "../common";
+} from "@keyfi/keyfi-common/src/integrations/common";
 
 const GAS_LIMIT = 250000;
 const PENDING_CALLBACK_PLATFORM = "keyfi rewardpool";
+
+const isSupportedNetwork = async (web3OrNetwork) => {
+  const network = await processWeb3OrNetworkArgument(web3OrNetwork);
+  return Boolean(contractAddressesv2[network.name]);
+};
 
 const getContractAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
@@ -26,7 +29,7 @@ const getContractAddress = async (web3, contractName) => {
     );
   }
 
-  const address = contractAddresses[network.name][contractName];
+  const address = contractAddressesv2[network.name][contractName];
   if (!address) {
     throw new Error(
       `Unknown contract: '${contractName}' on '${network.name}' network`
@@ -34,6 +37,23 @@ const getContractAddress = async (web3, contractName) => {
   }
 
   return address;
+};
+
+const getSupportedAssets = async (web3) => {
+  if (!web3) {
+    web3 = await getWeb3();
+  }
+
+  const network = await getNetwork(web3);
+
+  const addresses = contractAddressesv2[network.name];
+  if (!addresses) {
+    throw new Error(
+      `Network with chainId=${network.chainId} is not supported!`
+    );
+  }
+
+  return Object.keys(addresses).filter((asset) => asset !== "RewardPool");
 };
 
 export const getBalancev2 = async (accountAddress = null, options = {}) => {
@@ -48,7 +68,7 @@ export const getBalancev2 = async (accountAddress = null, options = {}) => {
     accountAddress = getCurrentAccountAddress(web3);
   }
 
-  const poolAddress = await getContractAddress(web3, "RewardPoolv2");
+  const poolAddress = await getContractAddress(web3, "RewardPool");
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
 
   const balances = {};
@@ -71,7 +91,7 @@ export const depositv2 = async (asset, amount, options = {}) => {
   const nAmount = normalizeAmount(network, asset, amount);
 
   const assetAddress = await getContractAddress(web3, asset);
-  const poolAddress = await getContractAddress(web3, "RewardPoolv2");
+  const poolAddress = await getContractAddress(web3, "RewardPool");
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
   const trxOverrides = getTrxOverrides(options);
 
@@ -124,7 +144,7 @@ export const withdrawv2 = async (asset, amount, options = {}) => {
   const nAmount = normalizeAmount(network, asset, amount);
 
   const assetAddress = await getContractAddress(web3, asset);
-  const poolAddress = await getContractAddress(web3, "RewardPoolv2");
+  const poolAddress = await getContractAddress(web3, "RewardPool");
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
   const trxOverrides = getTrxOverrides(options);
 
@@ -152,7 +172,7 @@ export const withdrawRewardv2 = async (asset, options = {}) => {
   const web3 = await getWeb3();
 
   const assetAddress = await getContractAddress(web3, asset);
-  const poolAddress = await getContractAddress(web3, "RewardPoolv2");
+  const poolAddress = await getContractAddress(web3, "RewardPool");
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
   const trxOverrides = getTrxOverrides(options);
 
@@ -204,7 +224,7 @@ export const getRewardsv2 = async (accountAddress = null) => {
     accountAddress = getCurrentAccountAddress(web3);
   }
 
-  const poolAddress = await getContractAddress(web3, "RewardPoolv2");
+  const poolAddress = await getContractAddress(web3, "RewardPool");
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
 
   const rewards = {};
