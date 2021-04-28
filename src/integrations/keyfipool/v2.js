@@ -235,7 +235,7 @@ export const getRewardsv2 = async (accountAddress = null) => {
       .pendingReward(assetAddress, accountAddress)
       .call();
 
-    rewards[asset] = denormalizeAmount(network, asset, assetReward);
+    rewards[asset] = denormalizeAmount(network, asset, assetReward, 18);
   }
 
   return rewards;
