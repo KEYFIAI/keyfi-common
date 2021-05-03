@@ -478,7 +478,7 @@ export const coingeckoAssetsIds = {
   RLC: "iexec-rlc",
   RSR: "reserve-rights-token",
   SBTC: "super-bitcoin",
-  SLP: "small-love-potion",
+  SLP: "smooth-love-potion",
   STAKE: "xdai-stake",
   SUSHI: "sushi",
   SXP: "swipe",
