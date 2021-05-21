@@ -1,53 +1,42 @@
 import axios from "axios";
 import BigNumber from "bignumber.js";
-
-import {
-  availablePairs,
-  contractAddresses,
-  uniswapContracts,
-  PAIR_NOT_EXISTS,
-  NULL_ADDRESS,
-} from "./constants";
-import factoryAbi from "./abi/factory.abi.json";
-import routerAbi from "./abi/router02.abi.json";
+import routerAbi from "./abi/routerv2.abi.json";
+import factoryAbi from "./abi/factoryAbi.abi.json";
 import pairAbi from "./abi/pair.abi.json";
 import {
-  approveErc20IfNeeded,
-  erc20Addresses,
-  getCurrentAccountAddress,
+  denormalizeAmount,
+  normalizeAmount,
   getNetwork,
+  getWeb3,
+  processWeb3OrNetworkArgument,
+  getCurrentAccountAddress,
+  approveErc20IfNeeded,
   getPendingTrxCallback,
   getTrxOverrides,
-  getWeb3,
-  normalizeAmount,
-  denormalizeAmount,
-  processWeb3OrNetworkArgument,
 } from "../common";
-import { userLiquidityQuery } from "./graphql";
+import { contractAddresses, supportedPairs } from "./constants";
+import { erc20Addresses } from "../common/constants";
+import { NULL_ADDRESS, PAIR_NOT_EXISTS } from "./constants";
 
-export const DEFAULT_MAX_SLIPPAGE = 0.005;
+const DEFAULT_MAX_SLIPPAGE = 0.005;
 const GAS_LIMIT = 300000;
-const PENDING_CALLBACK_PLATFORM = "uniswap";
-const UNISWAP_GRAPHQL_URL =
-  "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2";
-const UNSUPPORTED_ASSETS = ["KEYFIUSDCLP", "KEYFIETH_LP"];
+const PENDING_CALLBACK_PLATFORM = "pancakeswap";
 
 const calculateMinAmount = (amount, slippage) =>
   new BigNumber(amount).multipliedBy(1 - slippage).toFixed(0);
 
-const getDefaultDeadline = () => Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes later
+const getDefaultDeadline = () => Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
 
 export const isSupportedNetwork = async (web3OrNetwork) => {
   const network = await processWeb3OrNetworkArgument(web3OrNetwork);
-  return Boolean(availablePairs[network.name]);
+  return Boolean(contractAddresses[network.name]);
 };
 
-const getContractAddress = async (web3, contractName) => {
+export const getContractAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
+
   if (!(await isSupportedNetwork(network))) {
-    throw new Error(
-      `Network with chainId=${network.chainId} is not supported!`
-    );
+    throw new Error(`Network with chainId=${network.chainId} is not supported`);
   }
 
   const address = contractAddresses[network.name][contractName];
@@ -68,14 +57,14 @@ const getContractAddress = async (web3, contractName) => {
 };
 
 const getAssetAddress = async (web3, asset) => {
-  if (asset === "ETH") {
-    return getContractAddress(web3, "WETH");
+  if (asset === "BNB" || asset === "WBNB") {
+    return getContractAddress(web3, "wBNB");
   }
 
   return getContractAddress(web3, asset);
 };
 
-const getPairAddress = async (web3, assetAAddress, assetBAddress) => {
+export const getPairAddress = async (web3, assetAAddress, assetBAddress) => {
   const factoryAddress = await getContractAddress(web3, "Factory");
   const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
   const pairAddress = await factoryContract.methods
@@ -83,7 +72,7 @@ const getPairAddress = async (web3, assetAAddress, assetBAddress) => {
     .call();
 
   if (pairAddress === NULL_ADDRESS) {
-    const error = new Error("Pair is not exists!");
+    const error = new Error("Pair does not exist");
     error.code = PAIR_NOT_EXISTS;
     throw error;
   }
@@ -92,8 +81,8 @@ const getPairAddress = async (web3, assetAAddress, assetBAddress) => {
 };
 
 export const isPairAvailable = async (assetA, assetB) => {
-  assetA = assetA === "ETH" ? "WETH" : assetA;
-  assetB = assetB === "ETH" ? "WETH" : assetB;
+  assetA = assetA === "BNB" ? "wBNB" : assetA;
+  assetB = assetB === "BNB" ? "wBNB" : assetB;
 
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
@@ -103,36 +92,55 @@ export const isPairAvailable = async (assetA, assetB) => {
     );
   }
 
-  const pairKey = [assetA, assetB].sort().join(":");
-  return availablePairs[network.name].some((x) => x.key === pairKey);
-};
+  let assetAAddress = await getAssetAddress(web3, assetA);
+  let assetBAddress = await getAssetAddress(web3, assetB);
 
-export const getAvailablePairedAssets = async (mainAsset) => {
-  mainAsset = mainAsset === "ETH" ? "WETH" : mainAsset;
+  const tokenPairName = `${assetAAddress.toLowerCase()}_${assetBAddress.toLowerCase()}`;
 
-  const web3 = await getWeb3();
-  const network = await getNetwork(web3);
-  if (!(await isSupportedNetwork(network))) {
-    throw new Error(
-      `Network with chainId=${network.chainId} is not supported!`
-    );
-  }
+  const { data } = await axios.get(`https://api.pancakeswap.info/api/v2/pairs`);
 
-  const paired = availablePairs[network.name].reduce(
-    (listOfPairedAssets, pair) => {
-      if (pair.assetA === mainAsset) {
-        listOfPairedAssets.push(pair.assetB);
-      } else if (pair.assetB === mainAsset) {
-        listOfPairedAssets.push(pair.assetA);
-      }
+  const { data: tokenPairs } = data;
 
-      return listOfPairedAssets;
-    },
-    []
+  const tokenPairKey = Object.keys(tokenPairs).find(
+    (key) => key.toLowerCase() === tokenPairName
   );
 
-  if (paired.includes("WETH")) {
-    paired.push("ETH");
+  const tokenPairKey2 = supportedPairs.some(
+    (x) => x.key === `${assetA}:${assetB}`
+  );
+
+  if (tokenPairKey || tokenPairKey2) {
+    return true;
+  }
+};
+
+export const getAvailablePairedAssets = async (mainAsset, tokenPairs) => {
+  mainAsset = mainAsset === "BNB" ? "WBNB" : mainAsset;
+
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  if (!(await isSupportedNetwork(network))) {
+    throw new Error(
+      `Network with chainId=${network.chainId} is not supported!`
+    );
+  }
+
+  tokenPairs = [...tokenPairs, ...supportedPairs];
+
+  const paired = tokenPairs.reduce((listOfPairedAssets, pair) => {
+    const asset1 = pair.base_symbol.toUpperCase();
+    const asset2 = pair.quote_symbol.toUpperCase();
+    if (asset1 === mainAsset) {
+      listOfPairedAssets.push(asset2);
+    } else if (asset2 === mainAsset) {
+      listOfPairedAssets.push(asset1);
+    }
+
+    return listOfPairedAssets;
+  }, []);
+
+  if (paired.includes("WBNB")) {
+    paired.push("BNB");
   }
 
   return Array.from(new Set(paired));
@@ -140,9 +148,9 @@ export const getAvailablePairedAssets = async (mainAsset) => {
 
 const MAXIMUM_ROUTE_LENGTH = 4;
 
-const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
+export const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
   if (fromAssetSymbol === toAssetSymbol) {
-    throw new Error("fromAssetSymbol and toAssetSymbol are same!");
+    throw new Error(`${fromAssetSymbol} and ${toAssetSymbol} are the same`);
   }
 
   if (await isPairAvailable(fromAssetSymbol, toAssetSymbol)) {
@@ -152,6 +160,12 @@ const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
   let neededRoute = null;
   let routes = [[fromAssetSymbol]];
 
+  const { data } = await axios.get(`https://api.pancakeswap.info/api/v2/pairs`);
+
+  let { data: tokenPairs } = data;
+
+  tokenPairs = Object.values(tokenPairs);
+
   while (
     !neededRoute &&
     routes.length > 0 &&
@@ -160,7 +174,8 @@ const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
     let newRoutes = [];
     for (const route of routes) {
       const pairedAssets = await getAvailablePairedAssets(
-        route[route.length - 1]
+        route[route.length - 1],
+        tokenPairs
       );
 
       newRoutes = newRoutes.concat(
@@ -193,12 +208,12 @@ export const estimateSwap = async (
   const network = await getNetwork(web3);
   fromAmount = normalizeAmount(network, fromAssetSymbol, fromAmount);
 
-  const routerAddress = await getContractAddress(web3, "Router02");
+  const routerAddress = await getContractAddress(web3, "Routerv2");
   const routerContract = new web3.eth.Contract(routerAbi, routerAddress);
 
   const route = await findRoute(fromAssetSymbol, toAssetSymbol);
   const routeAddresses = await Promise.all(
-    route.map((assetSymbol) => getAssetAddress(web3, assetSymbol))
+    route.map((symbol) => getAssetAddress(web3, symbol))
   );
 
   const result = await routerContract.methods
@@ -236,11 +251,11 @@ export const swap = async (
   const accountAddress = getCurrentAccountAddress(web3);
   const trxOverrides = getTrxOverrides(options);
   const routeAddresses = await Promise.all(
-    estimation.route.map((assetSymbol) => getAssetAddress(web3, assetSymbol))
+    estimation.route.map((symbol) => getAssetAddress(web3, symbol))
   );
-  const routerAddress = await getContractAddress(web3, "Router02");
+  const routerAddress = await getContractAddress(web3, "Routerv2");
 
-  if (fromAssetSymbol !== "ETH") {
+  if (fromAssetSymbol !== "BNB") {
     await approveErc20IfNeeded(
       web3,
       routeAddresses[0],
@@ -273,7 +288,7 @@ export const swap = async (
   const routerContract = new web3.eth.Contract(routerAbi, routerAddress);
   const deadline = options.deadline || getDefaultDeadline();
 
-  if (fromAssetSymbol === "ETH") {
+  if (fromAssetSymbol === "BNB") {
     return routerContract.methods
       .swapExactETHForTokens(
         minReturn,
@@ -302,7 +317,7 @@ export const swap = async (
   }
 
   const method =
-    toAssetSymbol === "ETH"
+    toAssetSymbol === "BNB"
       ? routerContract.methods.swapExactTokensForETH
       : routerContract.methods.swapExactTokensForTokens;
 
@@ -336,6 +351,7 @@ export const getLiquidity = async (assetA, assetB, options = {}) => {
 
   let assetAAddress = await getAssetAddress(web3, assetA);
   let assetBAddress = await getAssetAddress(web3, assetB);
+
   if (assetAAddress.toLowerCase() > assetBAddress.toLowerCase()) {
     [assetA, assetB] = [assetB, assetA];
     [assetAAddress, assetBAddress] = [assetBAddress, assetAAddress];
@@ -385,7 +401,8 @@ export const getAccountLiquidity = async (
 
   const pairAddress = await getPairAddress(web3, assetAAddress, assetBAddress);
   const pairContract = new web3.eth.Contract(pairAbi, pairAddress);
-  // In case we already know the balance we can pass it as option
+
+  // If we already know the balance, we can pass it as option
   const balance = options.balance
     ? options.balance
     : await pairContract.methods.balanceOf(address).call();
@@ -402,7 +419,7 @@ export const getAccountLiquidity = async (
         .multipliedBy(pairLiquidity[assetA])
         .dividedToIntegerBy(1)
         .toFixed(0),
-      [assetB]: liquidityPercent
+      [assetA]: liquidityPercent
         .multipliedBy(pairLiquidity[assetB])
         .dividedToIntegerBy(1)
         .toFixed(0),
@@ -423,69 +440,25 @@ export const getAccountLiquidity = async (
     [assetB]: liquidityPercent
       .multipliedBy(denormalizeAmount(network, assetB, pairLiquidity[assetB]))
       .toFixed(),
-    liquidity: denormalizeAmount(network, "UNI-V2", balance),
+    liquidity: denormalizeAmount(network, "CAKE-V2", balance),
     totalLiquidity: totalSupply,
     liquidityPercent: liquidityPercent.toFixed(),
   };
 };
 
-export const getAccountLiquidityAll = async (address = null) => {
-  const web3 = await getWeb3();
+// export const getAccountLiquidityAll = async (address = null) => {
+//   const web3 = await getWeb3();
 
-  if (!(await isSupportedNetwork(web3))) {
-    return [];
-  }
+//   if (!(await isSupportedNetwork(web3))) {
+//     return []
+//   }
 
-  if (!address) {
-    address = getCurrentAccountAddress(web3);
-  }
+//   if (!address) {
+//     address = getCurrentAccountAddress(web3)
+//   }
 
-  const res = await axios.post(UNISWAP_GRAPHQL_URL, {
-    query: userLiquidityQuery.replace("$ACCOUNT_ADDRESS", address),
-  });
-
-  const liquidityPositions = res.data.data.user
-    ? res.data.data.user.liquidityPositions
-    : [];
-  const supportedAssets = await getSupportedAssets();
-
-  const liquidityAll = liquidityPositions.reduce((pairs, liquidityPair) => {
-    const assetA = liquidityPair.pair.token0.symbol;
-    const assetB = liquidityPair.pair.token1.symbol;
-
-    if (supportedAssets.includes(assetA) && supportedAssets.includes(assetB)) {
-      const { totalSupply } = liquidityPair.pair;
-      const liquidityBalance = BigNumber(liquidityPair.liquidityTokenBalance);
-      const liquidityPercent = liquidityBalance.dividedBy(totalSupply);
-
-      if (liquidityPercent > 0) {
-        pairs.push({
-          assetA,
-          assetB,
-          [assetA]: liquidityPercent
-            .multipliedBy(liquidityPair.pair.reserve0)
-            .toFixed(),
-          [assetB]: liquidityPercent
-            .multipliedBy(liquidityPair.pair.reserve1)
-            .toFixed(),
-          liquidity: liquidityPair.liquidityTokenBalance,
-          totalLiquidity: totalSupply,
-          liquidityPercent: liquidityPercent.toFixed(),
-        });
-      }
-    }
-
-    return pairs;
-  }, []);
-
-  // Fetch KEYFI/USDC liquidity from chain to be able to debug it on ganache
-  const keyfiLiquidity = await getAccountLiquidity("KEYFI", "USDC");
-  if (keyfiLiquidity.liquidity > 0) {
-    liquidityAll.push(keyfiLiquidity);
-  }
-
-  return liquidityAll;
-};
+//   const res = await
+// }
 
 export const addLiquidity = async (
   assetA,
@@ -495,10 +468,10 @@ export const addLiquidity = async (
   options = {}
 ) => {
   if (assetA === assetB) {
-    throw Error(`assetA (${assetA}) === assetB (${assetB})`);
+    throw Error(`Both assets are equal`);
   }
 
-  if (assetB === "ETH") {
+  if (assetB === "BNB") {
     [assetA, assetB] = [assetB, assetA];
   }
 
@@ -508,12 +481,12 @@ export const addLiquidity = async (
   const assetBAmountNorm = normalizeAmount(network, assetB, assetBAmount);
 
   const account = getCurrentAccountAddress(web3);
-  const routerAddress = await getContractAddress(web3, "Router02");
+  const routerAddress = await getContractAddress(web3, "Routerv2");
   const assetAAddress = await getAssetAddress(web3, assetA);
   const assetBAddress = await getAssetAddress(web3, assetB);
   const trxOverrides = getTrxOverrides(options);
 
-  if (assetA !== "ETH") {
+  if (assetA !== "BNB") {
     await approveErc20IfNeeded(
       web3,
       assetAAddress,
@@ -568,7 +541,7 @@ export const addLiquidity = async (
 
   const routerContract = new web3.eth.Contract(routerAbi, routerAddress);
 
-  if (assetA === "ETH") {
+  if (assetA === "BNB") {
     return routerContract.methods
       .addLiquidityETH(
         assetBAddress,
@@ -636,7 +609,7 @@ export const addLiquidity = async (
     );
 };
 
-// Percent is float in range 0-1
+// Percent is a float number in range of 0-1
 export const removeLiquidity = async (
   assetA,
   assetB,
@@ -644,10 +617,10 @@ export const removeLiquidity = async (
   options = {}
 ) => {
   if (assetA === assetB) {
-    throw Error(`assetA (${assetA}) === assetB (${assetB})`);
+    throw Error(`Both assets are identical`);
   }
 
-  if (assetB === "ETH") {
+  if (assetB === "BNB") {
     [assetA, assetB] = [assetB, assetA];
   }
 
@@ -666,7 +639,7 @@ export const removeLiquidity = async (
     .dividedToIntegerBy(1)
     .toFixed();
 
-  const routerAddress = await getContractAddress(web3, "Router02");
+  const routerAddress = await getContractAddress(web3, "Routerv2");
   const assetAAddress = await getAssetAddress(web3, assetA);
   const assetBAddress = await getAssetAddress(web3, assetB);
   const pairAddress = await getPairAddress(web3, assetAAddress, assetBAddress);
@@ -689,8 +662,8 @@ export const removeLiquidity = async (
         platform: PENDING_CALLBACK_PLATFORM,
         assets: [
           {
-            symbol: "UNI-V2",
-            amount: denormalizeAmount(network, "UNI-V2", liquidityToBurn),
+            symbol: "CAKE-V2",
+            amount: denormalizeAmount(network, "CAKE-V2", liquidityToBurn),
           },
         ],
       },
@@ -709,6 +682,7 @@ export const removeLiquidity = async (
     liquidityPercent.multipliedBy(reserves[assetA]),
     slippage
   );
+
   const minReturnB = calculateMinAmount(
     liquidityPercent.multipliedBy(reserves[assetB]),
     slippage
@@ -716,7 +690,7 @@ export const removeLiquidity = async (
 
   const routerContract = new web3.eth.Contract(routerAbi, routerAddress);
 
-  if (assetA === "ETH") {
+  if (assetA === "BNB") {
     return routerContract.methods
       .removeLiquidityETH(
         assetBAddress,
@@ -785,26 +759,13 @@ export const removeLiquidity = async (
 const getSupportedAssetsMapUnfiltered = async () => {
   const web3 = await getWeb3();
   const { name } = await getNetwork(web3);
-
-  // On mainnet we are supporting all available assets
-  if (name === "mainnet") {
-    return erc20Addresses["mainnet"];
+  if (name === "bsc-mainnet") {
+    return contractAddresses["bsc-mainnet"];
   }
 
-  return Object.entries(contractAddresses[name]).reduce(
-    (acc, [assetSymbol, assetAddress]) => {
-      if (!uniswapContracts.includes(assetSymbol)) {
-        acc[assetSymbol] = assetAddress;
-      }
-
-      return acc;
-    },
-    {}
-  );
+  throw new Error("Pancakeswap only support BSC");
 };
 
 export const getSupportedAssets = async () => {
-  return Object.keys(await getSupportedAssetsMapUnfiltered())
-    .filter((asset) => !UNSUPPORTED_ASSETS.includes(asset))
-    .concat("ETH");
+  return Object.keys(await getSupportedAssetsMapUnfiltered()).concat("BNB");
 };
