@@ -123,7 +123,7 @@ export const getUsdPrice = async (assetOrAssets) => {
   assets.forEach((asset) => {
     const { coingeckoId } = asset;
     if (coingeckoId) {
-      asset.usdPrice = response.data[coingeckoId].usd;
+      asset.usdPrice = response.data[coingeckoId]?.usd;
     } else {
       asset.usdPrice = 0;
     }
