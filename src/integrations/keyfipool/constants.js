@@ -19,6 +19,7 @@ export const contractAddresses = {
     KEYFI: "0x4b6000F9163de2E3f0a01eC37E06e1469DBbcE9d",
     KEYFIBUSD_LP: "0xd47618f68b1018f89b69d6c941c8c2b83868577c",
     wBNB: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+    USDC: "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
   },
 };
 
