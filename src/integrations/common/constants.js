@@ -281,6 +281,7 @@ export const decimals = {
     ASR: 2,
     ATM: 2,
     ATOM: 18,
+    BANANA: 18,
     BAKE: 18,
     bALBT: 18,
     BAND: 18,

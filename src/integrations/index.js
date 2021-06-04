@@ -8,4 +8,5 @@ export * as keyfipool from "./keyfipool";
 export * as uniswap from "./uniswap";
 export * as whitelist from "./whitelist";
 export * as pancakeswap from "./pancakeswap";
+export * as apeswap from "./apeswap";
 export * from "./common";
