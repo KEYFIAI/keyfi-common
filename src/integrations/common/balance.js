@@ -139,11 +139,20 @@ export const getUsdPrice = async (assetOrAssets) => {
   }, {});
 };
 
-export const getKeyfiUsdPrice = async () => {
-  const response = await axios.post(
-    "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2",
-    {
-      query: `
+export const getKeyfiUsdPrice = async (holderAddress) => {
+  const web3 = await getWeb3();
+
+  if (!holderAddress) {
+    holderAddress = getCurrentAccountAddress(web3);
+  }
+
+  const network = await getNetwork();
+
+  if (network.name === "mainnet") {
+    const response = await axios.post(
+      "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2",
+      {
+        query: `
         {
           tokenDayDatas(first: 1, orderBy: date, orderDirection: desc, where: {
             token: "0xb8647e90c0645152fccf4d9abb6b59eb4aa99052"
@@ -155,14 +164,47 @@ export const getKeyfiUsdPrice = async () => {
           }
         }
       `,
+      }
+    );
+
+    const keyfiData = response.data.data.tokenDayDatas[0];
+
+    if (!keyfiData) {
+      throw new Error("Didn't find KEYFI token in graphql query result!");
     }
-  );
 
-  const keyfiData = response.data.data.tokenDayDatas[0];
-
-  if (!keyfiData) {
-    throw new Error("Didn't find KEYFI token in graphql query result!");
+    return Number.parseFloat(keyfiData.priceUSD, 10);
   }
 
-  return Number.parseFloat(keyfiData.priceUSD, 10);
+  if (network.name === "bsc-mainnet" || network.name === "bsc-testnet") {
+    const response = await axios.post(
+      "https://graph2.apeswap.finance/subgraphs/name/ape-swap/apeswap-subgraph",
+      {
+        query: `
+        {
+          tokenDayDatas(first: 1, orderBy: date, orderDirection: desc, where: {
+            token: "0x4b6000f9163de2e3f0a01ec37e06e1469dbbce9d"
+          }) {
+            token {
+              id symbol
+            }
+            priceUSD
+          }
+        }
+      `,
+      }
+    );
+
+    const keyfiData = response.data.data.tokenDayDatas[0];
+
+    if (!keyfiData) {
+      throw new Error("Didn't find KEYFI token in graphql query result!");
+    }
+
+    return Number.parseFloat(keyfiData.priceUSD, 10);
+  }
+
+  return new Error(
+    `Network ${network.name} (chainId ${network.id}) is not supported`
+  );
 };
