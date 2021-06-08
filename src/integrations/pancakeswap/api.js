@@ -22,6 +22,8 @@ const DEFAULT_MAX_SLIPPAGE = 0.005;
 const GAS_LIMIT = 300000;
 const PENDING_CALLBACK_PLATFORM = "pancakeswap";
 
+const UNSUPPORTED_ASSETS = ["Routerv2", "Factory"];
+
 const calculateMinAmount = (amount, slippage) =>
   new BigNumber(amount).multipliedBy(1 - slippage).toFixed(0);
 
@@ -767,5 +769,7 @@ const getSupportedAssetsMapUnfiltered = async () => {
 };
 
 export const getSupportedAssets = async () => {
-  return Object.keys(await getSupportedAssetsMapUnfiltered()).concat("BNB");
+  return Object.keys(await getSupportedAssetsMapUnfiltered())
+    .filter((asset) => !UNSUPPORTED_ASSETS.includes(asset))
+    .concat("BNB");
 };

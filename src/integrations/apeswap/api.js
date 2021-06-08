@@ -21,6 +21,8 @@ const DEFAULT_MAX_SLIPPAGE = 0.005;
 const GAS_LIMIT = 300000;
 const PENDING_CALLBACK_PLATFORM = "apeswap";
 
+const UNSUPPORTED_ASSETS = ["Router", "Factory"]
+
 const calculateMinAmount = (amount, slippage) =>
   new BigNumber(amount).multipliedBy(1 - slippage).toFixed(0);
 
@@ -733,13 +735,13 @@ const getSupportedAssetsMapUnfiltered = async () => {
   const web3 = await getWeb3();
   const { name } = await getNetwork(web3);
 
-  if (name === "bsc-mainnet") {
-    return contractAddresses["bsc-mainnet"];
+  if (name === "bsc-mainnet" || name === "bsc-testnet") {
+    return contractAddresses[name];
   }
 
   throw new Error("ApeSwap only support BSC");
 };
 
 export const getSupportedAssets = async () => {
-  return Object.keys(await getSupportedAssetsMapUnfiltered()).concat("BNB");
+  return Object.keys(await getSupportedAssetsMapUnfiltered()).filter((asset) => !UNSUPPORTED_ASSETS.includes(asset)).concat("BNB");
 };
