@@ -84,10 +84,26 @@ const contractAddresses = {
   },
 };
 
-
-
 // Actual on 2021/06/04, ordered by trackedReserveEth DESC
 const supportedPairs = [
+  {
+    id: "0x1ffe0beec4c992974b62c1ea27054f0cbbcf537c",
+    token0: {
+      symbol: "KEYFI",
+    },
+    token1: {
+      symbol: "BANANA",
+    },
+  },
+  {
+    id: "0x80862c12e6c339223cc9f4502fe60683c4e477df",
+    token0: {
+      symbol: "KEYFI",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
   {
     id: "0xf65c1c0478efde3c19b49ecbe7acc57bb6b1d713",
     token0: {
