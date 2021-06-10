@@ -83,8 +83,8 @@ export const getPairAddress = async (web3, assetAAddress, assetBAddress) => {
 };
 
 export const isPairAvailable = async (assetA, assetB) => {
-  assetA = assetA === "BNB" ? "wBNB" : assetA;
-  assetB = assetB === "BNB" ? "wBNB" : assetB;
+  assetA = assetA === "BNB" ? "WBNB" : assetA;
+  assetB = assetB === "BNB" ? "WBNB" : assetB;
 
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
@@ -94,26 +94,11 @@ export const isPairAvailable = async (assetA, assetB) => {
     );
   }
 
-  let assetAAddress = await getAssetAddress(web3, assetA);
-  let assetBAddress = await getAssetAddress(web3, assetB);
-
-  const tokenPairName = `${assetAAddress.toLowerCase()}_${assetBAddress.toLowerCase()}`;
-
-  const { data } = await axios.get(`https://api.pancakeswap.info/api/v2/pairs`);
-
-  const { data: tokenPairs } = data;
-
-  const tokenPairKey = Object.keys(tokenPairs).find(
-    (key) => key.toLowerCase() === tokenPairName
+  return supportedPairs.some(
+    (x) =>
+      (x.token0.symbol === assetA || x.token1.symbol === assetA) &&
+      (x.token0.symbol === assetB || x.token1.symbol === assetB)
   );
-
-  const tokenPairKey2 = supportedPairs.some(
-    (x) => x.key === `${assetA}:${assetB}`
-  );
-
-  if (tokenPairKey || tokenPairKey2) {
-    return true;
-  }
 };
 
 export const getAvailablePairedAssets = async (mainAsset, tokenPairs) => {
@@ -127,15 +112,11 @@ export const getAvailablePairedAssets = async (mainAsset, tokenPairs) => {
     );
   }
 
-  tokenPairs = [...tokenPairs, ...supportedPairs];
-
-  const paired = tokenPairs.reduce((listOfPairedAssets, pair) => {
-    const asset1 = pair.base_symbol.toUpperCase();
-    const asset2 = pair.quote_symbol.toUpperCase();
-    if (asset1 === mainAsset) {
-      listOfPairedAssets.push(asset2);
-    } else if (asset2 === mainAsset) {
-      listOfPairedAssets.push(asset1);
+  const paired = supportedPairs.reduce((listOfPairedAssets, pair) => {
+    if (pair.token0.symbol.toUpperCase() === mainAsset) {
+      listOfPairedAssets.push(pair.token1.symbol.toUpperCase());
+    } else if (pair.token1.symbol.toUpperCase() === mainAsset) {
+      listOfPairedAssets.push(pair.token0.symbol.toUpperCase());
     }
 
     return listOfPairedAssets;
@@ -162,12 +143,6 @@ export const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
   let neededRoute = null;
   let routes = [[fromAssetSymbol]];
 
-  const { data } = await axios.get(`https://api.pancakeswap.info/api/v2/pairs`);
-
-  let { data: tokenPairs } = data;
-
-  tokenPairs = Object.values(tokenPairs);
-
   while (
     !neededRoute &&
     routes.length > 0 &&
@@ -176,8 +151,7 @@ export const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
     let newRoutes = [];
     for (const route of routes) {
       const pairedAssets = await getAvailablePairedAssets(
-        route[route.length - 1],
-        tokenPairs
+        route[route.length - 1]
       );
 
       newRoutes = newRoutes.concat(
