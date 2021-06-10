@@ -87,6 +87,15 @@ const contractAddresses = {
 // Actual on 2021/06/04, ordered by trackedReserveEth DESC
 const supportedPairs = [
   {
+    id: "0x7a8acaeafc4fa051de4eabff8d1abdd0388ae08a",
+    token0: {
+      symbol: "KEYFI",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
     id: "0x1ffe0beec4c992974b62c1ea27054f0cbbcf537c",
     token0: {
       symbol: "KEYFI",
@@ -536,15 +545,7 @@ const supportedPairs = [
       symbol: "WBNB",
     },
   },
-  {
-    id: "0x7a8acaeafc4fa051de4eabff8d1abdd0388ae08a",
-    token0: {
-      symbol: "KEYFI",
-    },
-    token1: {
-      symbol: "WBNB",
-    },
-  },
+
   {
     id: "0xbf34598168b890e1fd9e845c118a80c4861220ff",
     token0: {
