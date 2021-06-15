@@ -62,10 +62,11 @@ const supportedPairs = [
       symbol: "BUSD",
     },
   },
+
   {
     id: "0xa527a61703d82139f8a06bc30097cc9caa2df5a6",
     token0: {
-      symbol: "CAKE",
+      symbol: "Cake",
     },
     token1: {
       symbol: "WBNB",
@@ -830,7 +831,7 @@ const supportedPairs = [
   {
     id: "0x0ed8e0a2d99643e1e65cca22ed4424090b8b7458",
     token0: {
-      symbol: "CAKE",
+      symbol: "Cake",
     },
     token1: {
       symbol: "BUSD",
@@ -1860,6 +1861,906 @@ const supportedPairs = [
     },
     token1: {
       symbol: "CROW",
+    },
+  },
+  {
+    id: "0x85644fcd00c401e1a0a0a10d2ae6bbe04a73e4ab",
+    token0: {
+      symbol: "LTO",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xed81c1fbbfe8a3051f96d1532b800c967e88eb16",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "BBOO",
+    },
+  },
+  {
+    id: "0x3512d9a9d3f369e3258d4a75d3b471ca9f37cc86",
+    token0: {
+      symbol: "VLAD",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xe2f25bc211d63cd30e749be728c69b000ecc1646",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "HASH",
+    },
+  },
+  {
+    id: "0xc18c7f26898f1e318352eee407bc6cb1d37791b3",
+    token0: {
+      symbol: "BTCB",
+    },
+    token1: {
+      symbol: "BBOO",
+    },
+  },
+  {
+    id: "0x3e820df7d7086de2d46d908d04c0a24968b32b94",
+    token0: {
+      symbol: "CBRL",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x33a23558eb1ef3139dcf3a0484ad59c6e9755beb",
+    token0: {
+      symbol: "FVT",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x20a3dc9c2ac748e3684015209735b7cdd6ca6ba5",
+    token0: {
+      symbol: "TOAD",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xab5f212d945c6109be17a61a5598e2dd6f896bdf",
+    token0: {
+      symbol: "NFTL",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x65f898950e1759d95b5aae15f452e37c5bbe641e",
+    token0: {
+      symbol: "TWT",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0xe7cc44de50b54906a9c1c48240650be2766481fc",
+    token0: {
+      symbol: "ETH",
+    },
+    token1: {
+      symbol: "USDT",
+    },
+  },
+  {
+    id: "0x5c1f1209ea1d77f791a6e15c69de80d39d2da016",
+    token0: {
+      symbol: "TT",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0xccb7808fdc67adb369d52c651c825a16c1bd9a11",
+    token0: {
+      symbol: "GOFI",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x155645cdf8e4b28d5b7790b65d9f79efc222740c",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "GUM",
+    },
+  },
+  {
+    id: "0xb2bacce54ce21af2000da2af52130424d21ebbb5",
+    token0: {
+      symbol: "OAK",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x1cb667fe903dbdcbd27d8b35e82fbcef4ca0f621",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "RAKE",
+    },
+  },
+  {
+    id: "0x034c9e6b08c09a6144e0d0e52161338fb105e656",
+    token0: {
+      symbol: "NUTS",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x3b3213e8f78ed08bfc0c5640f730e9f0861967f1",
+    token0: {
+      symbol: "KIND",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0x17cb600737bf84e7cbc57e04335352e835be9294",
+    token0: {
+      symbol: "EXF",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x67b78318db88eeb6c9271816114d3ca6423fd66d",
+    token0: {
+      symbol: "START",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x81eac96cd41e5cbcf19827065fe927390a19491b",
+    token0: {
+      symbol: "RUPEE",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0x51dcaf423fe39f620a13379cd26821cf8d433308",
+    token0: {
+      symbol: "PIG",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x2983c930e74dcbf5cb4e50aa92375b4914c4d055",
+    token0: {
+      symbol: "WOW",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xd3f004e303114423f122c78afded4acfe97675b1",
+    token0: {
+      symbol: "BIFI",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0xdeca49945ee4d6f0da84f59bd13addee2ebac565",
+    token0: {
+      symbol: "DEGENR",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x24b87c29e907d6329ed8fd6d7b2ecb074089093e",
+    token0: {
+      symbol: "ZEFI",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0xa71d89f694ef41cdbde0f4805eee04ad76948c39",
+    token0: {
+      symbol: "CYCLE",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x31115ea1d4d8da28112b7dd201cace422edcd3e3",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "MKAT",
+    },
+  },
+  {
+    id: "0xff588fa9be7efb26e3813dc548a02cc1206e6be8",
+    token0: {
+      symbol: "YES",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x1fd9af4999de0d61c2a6cbd3d4892b675a082999",
+    token0: {
+      symbol: "BREW",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0xe738c35f8defac2517170e3c8ac1c85ffde6ff2b",
+    token0: {
+      symbol: "OIL",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x916dd1dacaaf371273b53a414e0a6f15c1133b5c",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "WGR",
+    },
+  },
+  {
+    id: "0x64373608f2e93ea97ad4d8ca2cce6b2575db2f55",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "OG",
+    },
+  },
+  {
+    id: "0xffbde721c00c8f5e17bf8e83e6e501959d3736f0",
+    token0: {
+      symbol: "BTCB",
+    },
+    token1: {
+      symbol: "SWAMP",
+    },
+  },
+  {
+    id: "0x6aa8dcd0ad0b48076a9b7ea0fcf8b5b50fbc707a",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "SHRMP",
+    },
+  },
+  {
+    id: "0x7fb0017195470bc6978659396ec9d750a35c51fe",
+    token0: {
+      symbol: "STAX",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xbf3ffbd6dff32d6287bc4c83d6ea6ab8c80cc7e9",
+    token0: {
+      symbol: "BRICK",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0x93d708bfea03c689f110dbe2e578d5568708f942",
+    token0: {
+      symbol: "FEG",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x26ab5c07aa2f80e9ff846830a1d6af949c528e4b",
+    token0: {
+      symbol: "BHC",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x27a5b0630f1c4d8e9a29927d4b72f279988096e9",
+    token0: {
+      symbol: "CPX",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xed8e3628c79a8fd4f0bbb504b5114b8cf6889fda",
+    token0: {
+      symbol: "BLUE",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0x17f0b998b81ce75074a7cdadae6d63da3cb23572",
+    token0: {
+      symbol: "DEGO",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xc993acdae20a0fe4e892a941edaee708835e20ec",
+    token0: {
+      symbol: "KAVA",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x646384595ac396891433565a2c50aef2baaf37b4",
+    token0: {
+      symbol: "ALEPH",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xf696502ff99e22ccd47a5718df297c0467401e13",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "NARUTO2",
+    },
+  },
+  {
+    id: "0x13abfa7b781bee80ca7fae7ec71045488d876a8d",
+    token0: {
+      symbol: "STAX",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0x66db82fb3e63bd6451ee81b06685abede41232ba",
+    token0: {
+      symbol: "POLAR",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0xccdab1c5ae3d3eb31d81b3df3f69ff750a608830",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "DIESEL",
+    },
+  },
+  {
+    id: "0xc94b20ac3df3076fcedf16568faad02412614fa9",
+    token0: {
+      symbol: "JulD",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xc8fcba816ef9b0c5bc03d9178cfcc7ef785b4f2f",
+    token0: {
+      symbol: "SOAK",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x3027ad7781700a03496613377152dba78c38fa55",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "FOX",
+    },
+  },
+  {
+    id: "0x3da30727ed0626b78c212e81b37b97a8ef8a25bb",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "BAKE",
+    },
+  },
+  {
+    id: "0x20049985171b9efea7620b49e49fb8f8ef580b18",
+    token0: {
+      symbol: "ABS",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0xa153dcf90b0704fbac98f9d20ebf4e2ff15253f7",
+    token0: {
+      symbol: "SPB",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x49f06f5ce390a08a152bb44672c78dc0d56b4048",
+    token0: {
+      symbol: "FAST",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xec3b97802fb4883fdb7bf70f0924bf5ee0520cde",
+    token0: {
+      symbol: "CROW",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0x64a5f1dc142a9f0b8f0c428fcda0f3d58c3fcc4b",
+    token0: {
+      symbol: "ZD",
+    },
+    token1: {
+      symbol: "USDT",
+    },
+  },
+  {
+    id: "0xd8a8b959c2c570af0ca53a6118df192e6e1b00c6",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "UNICORN",
+    },
+  },
+  {
+    id: "0x2d3a6b1621b0ff8d5c8d4345957037ded9303226",
+    token0: {
+      symbol: "SAFEMARS",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xa129848749fdf3c8b2efc7392126f482869522d5",
+    token0: {
+      symbol: "GOAT",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x1efcb446bfa553a2eb2fff99c9f76962be6ecac3",
+    token0: {
+      symbol: "DOGE",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0x4378e5c5cfb086fd3bde4baa9ed538432308b07f",
+    token0: {
+      symbol: "GIF",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0x86d96016eac7b1dfe0876360ba8a5c375cb24c2e",
+    token0: {
+      symbol: "JULb",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x889e81d25bffba437b2a5d3e0e4fc58a0e2749c5",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "pCWS",
+    },
+  },
+  {
+    id: "0x2c363840e57d01d9c2d517eecddf1523d368c4e5",
+    token0: {
+      symbol: "VLT",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x2d009ce3c73a4e3e01caea1e6f734df489650a08",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "HYVE",
+    },
+  },
+  {
+    id: "0x9feeb086ead845cc9a09fb3dcbbe86eb9c0706d8",
+    token0: {
+      symbol: "MATTER",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x015081cecba29736fbae67b08a9abfc12e0c6a04",
+    token0: {
+      symbol: "WORLD",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x756e415e458ac05c1a69e834092034017f74da93",
+    token0: {
+      symbol: "ORAI",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xf76a174beb64b4773c4442b8c359fccf5e32a401",
+    token0: {
+      symbol: "FWT",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xf1ca7d746699eab612e616c5c44b4c53d90db8ae",
+    token0: {
+      symbol: "FAT",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xe538da1617db5d6f6ef99e4e1719608f5fe15ad8",
+    token0: {
+      symbol: "PSC",
+    },
+    token1: {
+      symbol: "USDT",
+    },
+  },
+  {
+    id: "0xc86308923982b3d51b6873ed07894aaa69718e7d",
+    token0: {
+      symbol: "Energy",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0xd6b900d5308356317299dafe303e661271aa12f1",
+    token0: {
+      symbol: "ASR",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x9f3e2f94e70cdcd600cbb0fe499b24a7c1995554",
+    token0: {
+      symbol: "BLANK",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xe7d530cc866487407d93836194b6b7a47a5c1582",
+    token0: {
+      symbol: "SMOKE",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x10f461ceac7a17f59e249954db0784d42eff5db5",
+    token0: {
+      symbol: "bBADGER",
+    },
+    token1: {
+      symbol: "BTCB",
+    },
+  },
+  {
+    id: "0x0b3355d415c76dea6ea35b6cdebb4df37f57dcf7",
+    token0: {
+      symbol: "RUPEE",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x9b86f82e441da14dfad3ee68059e81052c05a35b",
+    token0: {
+      symbol: "JulD",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0xdb80636862f63f0c09f4981cf3a67bf7973a7b95",
+    token0: {
+      symbol: "KEX",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x7d728e3dc8aad87168930edb1e4ac0fe4d42d935",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "BLIQ",
+    },
+  },
+  {
+    id: "0x286384f741ecfa2311a9517051534ca1d4a34289",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "HAPI",
+    },
+  },
+  {
+    id: "0xb449889db544546d2e82b4975eca6adca5164e8c",
+    token0: {
+      symbol: "THIRM",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xa6846394f9765a9ab6ff1f516777d615e8556003",
+    token0: {
+      symbol: "SHAKE",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x4c79edab89848f34084283bb1fe8eac2dca649c3",
+    token0: {
+      symbol: "DEC",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0x5ac6fbeb266e93512fa24ba8bd573f2e560e4015",
+    token0: {
+      symbol: "JULb",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0xa103a01a841061ad8e09b1b43819c89d843b91a8",
+    token0: {
+      symbol: "YFUNI",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xeba5e26bbe080a50528717c5d7de19cfb946ef32",
+    token0: {
+      symbol: "WATER",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x0e6027880a04677bae5e4225000078ee92904bf6",
+    token0: {
+      symbol: "ZEFI",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x7c2d51a01f0213c80f74ea36ff5797d07e233603",
+    token0: {
+      symbol: "VANCII",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xf5f4b8a090ba1449215fa9dee5283d7f017971f4",
+    token0: {
+      symbol: "CCAKE",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0x9542762aa43fb5ed0bd109d34713a1100aa3615e",
+    token0: {
+      symbol: "PHX",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0xb22708b6fe748eec5bafe770e4ea48292c332ab0",
+    token0: {
+      symbol: "GG1",
+    },
+    token1: {
+      symbol: "BUSD",
+    },
+  },
+  {
+    id: "0xe1e33459505bb3763843a426f7fd9933418184ae",
+    token0: {
+      symbol: "bDIGG",
+    },
+    token1: {
+      symbol: "BTCB",
+    },
+  },
+  {
+    id: "0xa71427351503e2413a7204f0328d12e6e710bf2b",
+    token0: {
+      symbol: "ANI",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x9c4f6a5050cf863e67a402e8b377973b4e3372c1",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "PSG",
+    },
+  },
+  {
+    id: "0x060425e600893f24847c6eb6ad3d1cd6faecb1bc",
+    token0: {
+      symbol: "TSUKI",
+    },
+    token1: {
+      symbol: "WBNB",
+    },
+  },
+  {
+    id: "0x23bd254977db4897ca96ac36cbd728133b6df035",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "POKE",
+    },
+  },
+  {
+    id: "0x2d74b7dbf2835acadd8d4ef75b841c01e1a68383",
+    token0: {
+      symbol: "WBNB",
+    },
+    token1: {
+      symbol: "XWIN",
+    },
+  },
+  {
+    id: "0x53282ee85adc6ec4ed4429c3d4fdcebcca5470bd",
+    token0: {
+      symbol: "VRAP",
+    },
+    token1: {
+      symbol: "WBNB",
     },
   },
 ];
