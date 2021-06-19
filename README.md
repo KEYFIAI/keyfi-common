@@ -1,7 +1,6 @@
 # KeyFi Common Module
 
-NPM package for common elements between `keyfi-web` and `keyfi-pro`.
-Right now consists of common integrations only.
+NPM package for commonly used DeFi integrations via web3.  Can be used with frontend JS frameworks such as React.
 
 ## Versioning
 
