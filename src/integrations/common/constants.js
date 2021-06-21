@@ -448,6 +448,7 @@ export const networkNames = {
   3: "ropsten",
   56: "bsc-mainnet",
   97: "bsc-testnet",
+  137: "matic",
 };
 
 export const coingeckoAssetsIds = {
