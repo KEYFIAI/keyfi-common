@@ -9,4 +9,5 @@ export * as uniswap from "./uniswap";
 export * as whitelist from "./whitelist";
 export * as pancakeswap from "./pancakeswap";
 export * as apeswap from "./apeswap";
+export * as alkemi from "./alkemi";
 export * from "./common";
