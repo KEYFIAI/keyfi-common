@@ -12,14 +12,16 @@ export const getAccount = async (
     accountAddress = getCurrentAccountAddress(web3);
   }
 
-  try {
-    const { data } = await axios.get(
-      `${ALKEMI_URL}/accounts/${accountAddress}`
-    );
-    return data;
-  } catch (err) {
+  const res = await axios.get(`${ALKEMI_URL}/accounts/${accountAddress}`, {
+    validateStatus: false,
+  });
+
+
+  if (res.status === 404) {
     return {};
   }
+
+  return res.data;
 };
 
 export const getBorrowed = async (
@@ -46,9 +48,12 @@ export const getSupply = async (
   const supplyBalance = {};
   const { supply } = await getAccount(accountAddress, { web3 });
 
-  for (const asset of supply) {
-    supplyBalance[asset.symbol] = asset.amountToken;
+  if (supply) {
+    for (const asset of supply) {
+      supplyBalance[asset.symbol] = asset.amountToken;
+    }
   }
+  
 
   return supplyBalance;
 };
