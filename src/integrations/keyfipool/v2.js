@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import rewardPoolAbi from "./reward-pool-v2.abi";
 import { contractAddressesv2 } from "./constants";
 import {
@@ -11,6 +12,7 @@ import {
   denormalizeAmount,
   processWeb3OrNetworkArgument,
 } from "../common";
+import { getAccountLiquidity } from "../uniswap";
 
 const GAS_LIMIT = 250000;
 const PENDING_CALLBACK_PLATFORM = "keyfi rewardpool";
@@ -83,6 +85,36 @@ export const getBalancev2 = async (accountAddress = null, options = {}) => {
   }
 
   return balances;
+};
+
+/**
+ * Returns balance with KEYFIUSDCLP amount replaced by KEYFI and USDC staked amount
+ * Example:
+ *  getBalance() -> { KEY: 100, KEYFIUSDCLP: 0.001 }
+ *  getStaked()  -> { KEY: 100, KEYFI: 200, USDC: 20 }
+ */
+export const getStakedv2 = async (accountAddress) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const balance = await getBalancev2(accountAddress, { web3 });
+
+  if (BigNumber(balance.KEYFIETH_LP).gt(0)) {
+    const pairBalance = balance.KEYFIETH_LP;
+    delete balance["KEYFIETH_LP"];
+
+    const pair = await getAccountLiquidity("ETH", "KEYFI", null, {
+      balance: normalizeAmount(network, "KEYFIETH_LP", pairBalance),
+    });
+
+    balance.KEYFI = BigNumber(balance.KEYFI ? balance.KEYFI : 0)
+      .plus(pair.KEYFI)
+      .toFixed();
+    balance.USDC = BigNumber(balance.USDC ? balance.USDC : 0)
+      .plus(pair.USDC)
+      .toFixed();
+  }
+
+  return balance;
 };
 
 export const depositv2 = async (asset, amount, options = {}) => {
