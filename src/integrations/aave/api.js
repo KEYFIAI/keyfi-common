@@ -187,6 +187,37 @@ export async function borrow(asset, amount, options = {}) {
     );
 }
 
+export async function repay(asset, amount, options = {}) {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const assetAddress = await this.getAddress(asset);
+  const nAmount = normalizeAmount(network, asset, amount);
+
+  const address = getCurrentAccountAddress(web3);
+
+  const lp = await getLendingPoolContract(web3);
+  const trxOverrides = await getTrxOverrides(options);
+
+  return lp.methods.repay(assetAddress, nAmount, address).send(
+    {
+      from: getCurrentAccountAddress(web3),
+      gas: GAS_LIMIT,
+      ...trxOverrides,
+      nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
+    },
+    getPendingTrxCallback(options.pendingCallback, {
+      platform: PENDING_CALLBACK_PLATFORM,
+      type: "repay",
+      assets: [
+        {
+          symbol: asset,
+          amount: amount,
+        },
+      ],
+    })
+  );
+}
+
 export async function getBalance(address = null) {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
