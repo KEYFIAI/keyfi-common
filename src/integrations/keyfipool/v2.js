@@ -109,8 +109,8 @@ export const getStakedv2 = async (accountAddress) => {
     balance.KEYFI = BigNumber(balance.KEYFI ? balance.KEYFI : 0)
       .plus(pair.KEYFI)
       .toFixed();
-    balance.USDC = BigNumber(balance.USDC ? balance.USDC : 0)
-      .plus(pair.USDC)
+    balance.ETH = BigNumber(balance.ETH ? balance.ETH : 0)
+      .plus(pair.ETH)
       .toFixed();
   }
 

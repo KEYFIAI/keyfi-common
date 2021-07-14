@@ -198,24 +198,111 @@ export async function repay(asset, amount, options = {}) {
   const lp = await getLendingPoolContract(web3);
   const trxOverrides = await getTrxOverrides(options);
 
-  return lp.methods.repay(assetAddress, nAmount, address).send(
-    {
-      from: getCurrentAccountAddress(web3),
-      gas: GAS_LIMIT,
-      ...trxOverrides,
-      nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
-    },
-    getPendingTrxCallback(options.pendingCallback, {
-      platform: PENDING_CALLBACK_PLATFORM,
-      type: "repay",
-      assets: [
-        {
-          symbol: asset,
-          amount: amount,
+  if (asset === "ETH") {
+    return lp.methods.repay(assetAddress, nAmount, address).send(
+      {
+        from: getCurrentAccountAddress(web3),
+        value: nAmount,
+        gas: GAS_LIMIT,
+        ...trxOverrides,
+      },
+      getPendingTrxCallback(options.pendingCallback, {
+        platform: PENDING_CALLBACK_PLATFORM,
+        type: "repay",
+        assets: [
+          {
+            symbol: asset,
+            amount: amount,
+          },
+        ],
+      })
+    );
+  } else {
+    const lpCoreAddress = await this.getAddress("LendingPoolCore");
+
+    await approveErc20IfNeeded(
+      web3,
+      assetAddress,
+      lpCoreAddress,
+      nAmount,
+      {
+        from: getCurrentAccountAddress(web3),
+        gas: GAS_LIMIT,
+        ...trxOverrides,
+      },
+      {
+        pendingCallbackParams: {
+          callback: options.pendingCallback,
+          platform: PENDING_CALLBACK_PLATFORM,
+          assets: [
+            {
+              symbol: asset,
+              amount: amount,
+            },
+          ],
         },
-      ],
-    })
-  );
+      }
+    );
+
+    return lp.methods
+      .repay(assetAddress, nAmount, address)
+      .send(
+        {
+          from: getCurrentAccountAddress(web3),
+          ...trxOverrides,
+          gas: GAS_LIMIT,
+          nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
+        },
+        getPendingTrxCallback(options.pendingCallback, {
+          platform: PENDING_CALLBACK_PLATFORM,
+          type: "repay",
+          assets: [
+            {
+              symbol: asset,
+              amount: amount,
+            },
+          ],
+        })
+      )
+      .catch((e) => {
+        throw Error(
+          `Error in repay() call to the LendingPool contract: ${e.message}`
+        );
+      });
+  }
+}
+
+export async function getUserReserveData(asset) {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const assetAddress = await this.getAddress(asset);
+  const address = await getCurrentAccountAddress(web3);
+
+  const lp = await getLendingPoolContract(web3);
+  const data = await lp.methods
+    .getUserReserveData(assetAddress, address)
+    .call();
+
+  return {
+    currentATokenBalance: denormalizeAmount(
+      network,
+      asset,
+      data.currentATokenBalance
+    ),
+    currentBorrowBalance: denormalizeAmount(
+      network,
+      asset,
+      data.currentBorrowBalance
+    ),
+    borrowRateMode: data.borrowRateMode,
+    borrowRate: denormalizeAmount(network, asset, data.borrowRate),
+    liquidityRate: denormalizeAmount(network, asset, data.liquidityRate),
+    principalBorrowBalance: denormalizeAmount(
+      network,
+      asset,
+      data.principalBorrowBalance
+    ),
+  };
 }
 
 export async function getBalance(address = null) {
@@ -273,5 +360,26 @@ export async function getUserAccountData(address = null) {
   const lp = await getLendingPoolContract(web3);
   const user = await lp.methods.getUserAccountData(address).call();
 
-  return user;
+  return {
+    availableBorrowsETH: denormalizeAmount(
+      network,
+      "ETH",
+      user.availableBorrowsETH
+    ),
+    currentLiquidationThreshold: user.currentLiquidationThreshold,
+    healthFactor: user.healthFactor,
+    ltv: user.ltv,
+    totalBorrowsETH: denormalizeAmount(network, "ETH", user.totalBorrowsETH),
+    totalCollateralETH: denormalizeAmount(
+      network,
+      "ETH",
+      user.totalCollateralETH
+    ),
+    totalFeesETH: denormalizeAmount(network, "ETH", user.totalFeesETH),
+    totalLiquidityETH: denormalizeAmount(
+      network,
+      "ETH",
+      user.totalLiquidityETH
+    ),
+  };
 }

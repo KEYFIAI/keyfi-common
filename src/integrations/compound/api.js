@@ -1,11 +1,9 @@
 import BigNumber from "bignumber.js";
-import cErc20Abi from"./abi/cErc20.abi.json";
-import cEther from"./abi/cEther.abi.json";
-import {
-  contractAddresses,
-  cTokens,
-  supportedAssets,
-} from "./constants";
+import cErc20Abi from "./abi/cErc20.abi.json";
+import cEther from "./abi/cEther.abi.json";
+import comptrollerAbi from "./abi/comptroller.abi.json";
+import erc20Abi from "./abi/erc20.abi.json";
+import { contractAddresses, cTokens, supportedAssets } from "./constants";
 import {
   approveErc20IfNeeded,
   getBalanceEth,
@@ -37,8 +35,10 @@ export const isSupportedNetwork = async (web3OrNetwork) => {
 export const getContractAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
 
-  if (!await isSupportedNetwork(network)) {
-    throw new Error(`Network with chainId=${network.chainId} is not supported!`);
+  if (!(await isSupportedNetwork(network))) {
+    throw new Error(
+      `Network with chainId=${network.chainId} is not supported!`
+    );
   }
 
   const address = contractAddresses[network.name][contractName];
@@ -56,7 +56,7 @@ export const getSupportedAssets = () => supportedAssets;
 export const getBalance = async (accountAddress = null, options = {}) => {
   const web3 = await getWeb3();
 
-  if (!await isSupportedNetwork(web3)) {
+  if (!(await isSupportedNetwork(web3))) {
     return {};
   }
 
@@ -73,10 +73,12 @@ export const getBalance = async (accountAddress = null, options = {}) => {
 
     const cTokenContract = new web3.eth.Contract(
       cTokenSymbol === "cETH" ? cEther : cErc20Abi,
-      cTokenAddress,
+      cTokenAddress
     );
 
-    const result = await cTokenContract.methods.balanceOf(accountAddress).call();
+    const result = await cTokenContract.methods
+      .balanceOf(accountAddress)
+      .call();
 
     const network = await getNetwork(web3);
     const originalToken = cTokenSymbol.slice(1);
@@ -102,9 +104,8 @@ export const deposit = async (asset, amount, options = {}) => {
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
 
-  const balance = asset === "ETH"
-    ? await getBalanceEth()
-    : await getBalanceErc20(asset);
+  const balance =
+    asset === "ETH" ? await getBalanceEth() : await getBalanceErc20(asset);
 
   if (BigNumber(balance).lt(amount)) {
     throw new Error("Not enough funds!");
@@ -115,7 +116,7 @@ export const deposit = async (asset, amount, options = {}) => {
 
   const cTokenContract = new web3.eth.Contract(
     cTokenSymbol === "cETH" ? cEther : cErc20Abi,
-    cTokenAddress,
+    cTokenAddress
   );
   const trxOverrides = getTrxOverrides(options);
 
@@ -130,11 +131,13 @@ export const deposit = async (asset, amount, options = {}) => {
       getPendingTrxCallback(options.pendingCallback, {
         platform: PENDING_CALLBACK_PLATFORM,
         type: "deposit",
-        assets: [{
-          symbol: asset,
-          amount: amount,
-        }],
-      }),
+        assets: [
+          {
+            symbol: asset,
+            amount: amount,
+          },
+        ],
+      })
     );
   } else {
     const assetAddress = await getContractAddress(web3, asset);
@@ -152,12 +155,14 @@ export const deposit = async (asset, amount, options = {}) => {
         pendingCallbackParams: {
           callback: options.pendingCallback,
           platform: PENDING_CALLBACK_PLATFORM,
-          assets: [{
-            symbol: asset,
-            amount: amount,
-          }],
-        }
-      },
+          assets: [
+            {
+              symbol: asset,
+              amount: amount,
+            },
+          ],
+        },
+      }
     );
 
     return cTokenContract.methods.mint(nAmount).send(
@@ -170,11 +175,13 @@ export const deposit = async (asset, amount, options = {}) => {
       getPendingTrxCallback(options.pendingCallback, {
         platform: PENDING_CALLBACK_PLATFORM,
         type: "deposit",
-        assets: [{
-          symbol: asset,
-          amount: amount,
-        }],
-      }),
+        assets: [
+          {
+            symbol: asset,
+            amount: amount,
+          },
+        ],
+      })
     );
   }
 };
@@ -194,7 +201,7 @@ export const withdraw = async (asset, amount, options = {}) => {
 
   const cTokenContract = new web3.eth.Contract(
     cTokenSymbol === "cETH" ? cEther : cErc20Abi,
-    cTokenAddress,
+    cTokenAddress
   );
 
   return cTokenContract.methods.redeemUnderlying(nAmount).send(
@@ -206,12 +213,191 @@ export const withdraw = async (asset, amount, options = {}) => {
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
       type: "withdraw",
-      assets: [{
-        symbol: asset,
-        amount: amount,
-      }],
-    }),
+      assets: [
+        {
+          symbol: asset,
+          amount: amount,
+        },
+      ],
+    })
   );
+};
+
+export const getAccountLiquidity = async (address = null) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+
+  if (!address) {
+    address = await getCurrentAccountAddress(web3);
+  }
+
+  const comptrollerAddress = await getContractAddress(web3, "Comptroller");
+  const comptroller = new web3.eth.Contract(comptrollerAbi, comptrollerAddress);
+
+  const cEthAddress = await getContractAddress(web3, "cETH");
+
+  const { 1: liquidity } = await comptroller.methods
+    .getAccountLiquidity(address)
+    .call();
+
+  const { 1: collateralFactor } = await comptroller.methods
+    .markets(cEthAddress)
+    .call();
+
+  return {
+    liquidity: denormalizeAmount(network, "ETH", liquidity),
+    collateralFactor: `${
+      denormalizeAmount(network, "ETH", collateralFactor) * 100
+    } %`,
+  };
+};
+
+export const borrow = async (asset, amount, options = {}) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
+
+  const cTokenSymbol = `c${asset}`;
+  const cTokenAddress = await getContractAddress(web3, cTokenSymbol);
+
+  const cTokenContract = new web3.eth.Contract(
+    cTokenSymbol === "cETH" ? cEther : cErc20Abi,
+    cTokenAddress
+  );
+
+  const comptrollerAddress = await getContractAddress(web3, "Comptroller");
+  const comptroller = new web3.eth.Contract(comptrollerAbi, comptrollerAddress);
+  const cEthAddress = await getContractAddress(web3, "cETH");
+
+  let markets = [cEthAddress]; // This is the cToken contract(s) for your collateral
+  await comptroller.methods.enterMarkets(markets).send({
+    from: getCurrentAccountAddress(web3),
+    gas: GAS_LIMIT,
+  });
+
+  await cTokenContract.methods.borrow(nAmount.toString()).send(
+    {
+      from: getCurrentAccountAddress(web3),
+      gasLimit: web3.utils.toHex(500000),
+      gasPrice: web3.utils.toHex(20000000000),
+      ...getTrxOverrides(options),
+    },
+    getPendingTrxCallback(options.pendingCallback, {
+      platform: PENDING_CALLBACK_PLATFORM,
+      type: "borrow",
+      assets: [
+        {
+          symbol: asset,
+          amount: amount,
+        },
+      ],
+    })
+  );
+
+  const balance = await cTokenContract.methods
+    .borrowBalanceCurrent(getCurrentAccountAddress(web3))
+    .call();
+
+  return balance;
+};
+
+export const getBorrowBalance = async (address = null, options = {}) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+
+  if (!(await isSupportedNetwork(web3))) {
+    return {};
+  }
+
+  if (!address) {
+    address = getCurrentAccountAddress(web3);
+  }
+
+  // Fetch cToken borrow balances
+  const borrowBalance = {};
+  const cTokensSymbols = options.cTokens || cTokens;
+
+  for (const cToken of cTokensSymbols) {
+    const cTokenAddress = await getContractAddress(web3, cToken);
+    const cTokenContract = new web3.eth.Contract(
+      cToken === "ETH" ? cEther : cErc20Abi,
+      cTokenAddress
+    );
+
+    const result = await cTokenContract.methods
+      .borrowBalanceCurrent(address)
+      .call();
+
+    const originalToken = cToken.slice(1);
+    const cTokenBorrowBalance = denormalizeAmount(
+      network,
+      originalToken,
+      result
+    );
+
+    borrowBalance[originalToken] = cTokenBorrowBalance;
+  }
+
+  return borrowBalance;
+};
+
+export const borrowBalance = async (asset, address = null) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+
+  if (!address) {
+    address = getCurrentAccountAddress(web3);
+  }
+
+  const cTokenSymbol = `c${asset}`;
+  const cTokenAddress = await getContractAddress(web3, cTokenSymbol);
+  const cTokenContract = new web3.eth.Contract(cErc20Abi, cTokenAddress);
+
+  const balance = await cTokenContract.methods
+    .borrowBalanceCurrent(address)
+    .call();
+
+  return {
+    [asset]: denormalizeAmount(network, asset, balance),
+  };
+};
+
+export const repay = async (asset, amount, address, options = {}) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const nAmount = normalizeAmount(network, asset, amount);
+
+  if (!(await isSupportedNetwork(web3))) {
+    return {};
+  }
+
+  if (!address) {
+    address = getCurrentAccountAddress(web3);
+  }
+
+  const cTokenSymbol = `c${asset}`;
+  const tokenAddress = await getContractAddress(web3, asset);
+  const cTokenAddress = await getContractAddress(web3, cTokenSymbol);
+  const tokenContract = new web3.eth.Contract(erc20Abi, tokenAddress);
+
+  await tokenContract.methods.approve(cTokenAddress, nAmount).send({
+    from: address,
+    gasLimit: web3.utils.toHex(500000),
+    gasPrice: web3.utils.toHex(20000000000),
+    ...getTrxOverrides(options),
+  });
+
+  const cTokenContract = new web3.eth.Contract(
+    cTokenSymbol === "cETH" ? cEther : cErc20Abi,
+    cTokenAddress
+  );
+
+  return await cTokenContract.methods.repayBorrow(nAmount).send({
+    from: address,
+    gasLimit: web3.utils.toHex(500000),
+    gasPrice: web3.utils.toHex(20000000000),
+    ...getTrxOverrides(options),
+  });
 };
 
 export const getExchangeRate = async (cTokenSymbol) => {
@@ -224,7 +410,7 @@ export const getExchangeRate = async (cTokenSymbol) => {
 
   const cTokenContract = new web3.eth.Contract(
     cTokenSymbol === "cETH" ? cEther : cErc20Abi,
-    cTokenAddress,
+    cTokenAddress
   );
 
   return cTokenContract.methods.exchangeRateCurrent().call();
