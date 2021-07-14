@@ -73,7 +73,7 @@ export async function createWalletConnectWeb3() {
   return web3;
 }
 
-function goToSelfkey(params, protocol = 'selfkey') {
+function goToSelfkey(params, protocol = "selfkey") {
   const anchor = document.createElement("a");
   anchor.href = `${protocol}://${params}`;
   anchor.target = "_blank";
@@ -82,22 +82,22 @@ function goToSelfkey(params, protocol = 'selfkey') {
 }
 
 function getSelfkeyDeeplink() {
-  let protocol = 'selfkey';
+  let protocol = "selfkey";
 
   if (isMobile()) {
     return `${protocol}://wc`;
   }
 
-  if (process.env.NODE_ENV === 'development') {
-    protocol += '-dev';
+  if (process.env.NODE_ENV === "development") {
+    protocol += "-dev";
   }
 
   return `${protocol}://wallet-connect`;
 }
 
 async function creatSelfKeyWeb3() {
-  if (!isMobile()){
-    localStorage.setItem('walletconnect', null);
+  if (!isMobile()) {
+    localStorage.setItem("walletconnect", null);
   }
   const provider = new WalletConnectProvider({
     infuraId: process.env.REACT_APP_INFURA_KEY,
@@ -109,17 +109,23 @@ async function creatSelfKeyWeb3() {
     if (isMobile()) {
       goToSelfkey(`wc?uri=${uri}`);
     } else {
-      goToSelfkey(`wallet-connect/${uri}`, `selfkey${process.env.NODE_ENV === 'development' ? '-dev' : ''}`);
+      goToSelfkey(
+        `wallet-connect/${uri}`,
+        `selfkey${process.env.NODE_ENV === "development" ? "-dev" : ""}`
+      );
     }
   });
 
-  localStorage.setItem('WALLETCONNECT_DEEPLINK_CHOICE', JSON.stringify({
-    name: 'SelfKey',
-    href: getSelfkeyDeeplink()
-  }));
+  localStorage.setItem(
+    "WALLETCONNECT_DEEPLINK_CHOICE",
+    JSON.stringify({
+      name: "SelfKey",
+      href: getSelfkeyDeeplink(),
+    })
+  );
   await provider.enable();
 
-  if (!isMobile()){
+  if (!isMobile()) {
     const web3 = new Web3(provider);
     web3.eth.defaultAccount = provider.accounts[0];
     window.send = (e, t) => {
@@ -169,31 +175,40 @@ export const createWeb3InBrowser = (providerId) => {
 
 let _web3 = null;
 let _providerId = null;
-
-export const getWeb3 = async (providerId, init) => {
-  if (_web3) {
-    if (!providerId || (providerId && providerId === _providerId)) {
-      return _web3;
+let _providerLibrary = null;
+export const getWeb3 = async (providerId, init, library, account) => {
+  if (library || _providerLibrary) {
+    if (library) {
+      library.eth.defaultAccount = account;
+      _providerLibrary = library;
     }
-  }
-  // prevent repeat requests to desktop wallet
-  if (init && providerId === WalletProviderId.SelfKey && !isMobile()){
-    return;
-  }
-
-  _providerId = providerId;
-
-  if (typeof window === "undefined") {
-    _web3 = createWeb3InNodeJS();
+    return _providerLibrary;
   } else {
-    _web3 = await createWeb3InBrowser(providerId);
-  }
+    if (_web3) {
+      if (!providerId || (providerId && providerId === _providerId)) {
+        return _web3;
+      }
+    }
+    // prevent repeat requests to desktop wallet
+    if (init && providerId === WalletProviderId.SelfKey && !isMobile()) {
+      return;
+    }
 
-  return _web3;
+    _providerId = providerId;
+
+    if (typeof window === "undefined") {
+      _web3 = createWeb3InNodeJS();
+    } else {
+      _web3 = await createWeb3InBrowser(providerId);
+    }
+
+    return _web3;
+  }
 };
 
 export const resetWeb3 = () => {
   _web3 = null;
+  _providerLibrary = null;
   resetNetwork();
 };
 
