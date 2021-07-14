@@ -25,8 +25,10 @@ export const isSupportedNetwork = async (web3OrNetwork) => {
 const getContractAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
 
-  if (!await isSupportedNetwork(network)) {
-    throw new Error(`Network with chainId=${network.chainId} is not supported!`);
+  if (!(await isSupportedNetwork(network))) {
+    throw new Error(
+      `Network with chainId=${network.chainId} is not supported!`
+    );
   }
 
   const address = contractAddresses[network.name][contractName];
@@ -48,7 +50,9 @@ export const getSupportedAssets = async (web3) => {
 
   const addresses = contractAddresses[network.name];
   if (!addresses) {
-    throw new Error(`Network with chainId=${network.chainId} is not supported!`);
+    throw new Error(
+      `Network with chainId=${network.chainId} is not supported!`
+    );
   }
 
   return Object.keys(addresses).filter((asset) => asset !== "RewardPool");
@@ -58,7 +62,7 @@ export const getBalance = async (accountAddress = null, options = {}) => {
   const web3 = options.web3 ? options.web3 : await getWeb3();
   const network = await getNetwork(web3);
 
-  if (!await isSupportedNetwork(network)) {
+  if (!(await isSupportedNetwork(network))) {
     return {};
   }
 
@@ -73,9 +77,9 @@ export const getBalance = async (accountAddress = null, options = {}) => {
   for (const asset of await getSupportedAssets(web3)) {
     const assetAddress = await getContractAddress(web3, asset);
 
-    const assetBalance = await poolContract.methods.getBalance(
-      assetAddress,
-    ).call();
+    const assetBalance = await poolContract.methods
+      .getBalance(assetAddress)
+      .call();
 
     balances[asset] = denormalizeAmount(network, asset, assetBalance);
   }
@@ -92,23 +96,22 @@ export const getBalance = async (accountAddress = null, options = {}) => {
 export const getStaked = async (accountAddress) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
-  const balance = await getBalance(accountAddress, { web3 });
+  let balance = await getBalance(accountAddress, { web3 });
 
   if (BigNumber(balance.KEYFIUSDCLP).gt(0)) {
     const pairBalance = balance.KEYFIUSDCLP;
     delete balance["KEYFIUSDCLP"];
 
-    const pair = await getAccountLiquidity(
-      "USDC",
-      "KEYFI",
-      null,
-      { balance: normalizeAmount(network, "KEYFIUSDCLP", pairBalance) }
-    );
+    const pair = await getAccountLiquidity("USDC", "KEYFI", null, {
+      balance: normalizeAmount(network, "KEYFIUSDCLP", pairBalance),
+    });
 
-    balance.KEYFI =
-      BigNumber(balance.KEYFI ? balance.KEYFI : 0).plus(pair.KEYFI).toFixed();
-    balance.USDC =
-      BigNumber(balance.USDC ? balance.USDC : 0).plus(pair.USDC).toFixed();
+    balance.KEYFI = BigNumber(balance.KEYFI ? balance.KEYFI : 0)
+      .plus(pair.KEYFI)
+      .toFixed();
+    balance.USDC = BigNumber(balance.USDC ? balance.USDC : 0)
+      .plus(pair.USDC)
+      .toFixed();
   }
 
   return balance;
@@ -137,12 +140,14 @@ export const deposit = async (asset, amount, options = {}) => {
       pendingCallbackParams: {
         callback: options.pendingCallback,
         platform: PENDING_CALLBACK_PLATFORM,
-        assets: [{
-          symbol: asset,
-          amount,
-        }],
+        assets: [
+          {
+            symbol: asset,
+            amount,
+          },
+        ],
       },
-    },
+    }
   );
 
   return poolContract.methods.deposit(assetAddress, nAmount).send(
@@ -155,11 +160,13 @@ export const deposit = async (asset, amount, options = {}) => {
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
       type: "deposit",
-      assets: [{
-        symbol: asset,
-        amount,
-      }],
-    }),
+      assets: [
+        {
+          symbol: asset,
+          amount,
+        },
+      ],
+    })
   );
 };
 
@@ -183,11 +190,13 @@ export const withdraw = async (asset, amount, options = {}) => {
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
       type: "withdraw",
-      assets: [{
-        symbol: asset,
-        amount,
-      }],
-    }),
+      assets: [
+        {
+          symbol: asset,
+          amount,
+        },
+      ],
+    })
   );
 };
 
@@ -211,11 +220,13 @@ export const withdrawReward = async (asset, options = {}) => {
       pendingCallbackParams: {
         callback: options.pendingCallback,
         platform: PENDING_CALLBACK_PLATFORM,
-        assets: [{
-          symbol: asset,
-        }],
+        assets: [
+          {
+            symbol: asset,
+          },
+        ],
       },
-    },
+    }
   );
 
   return poolContract.methods.withdrawRewards(assetAddress).send(
@@ -228,10 +239,12 @@ export const withdrawReward = async (asset, options = {}) => {
     getPendingTrxCallback(options.pendingCallback, {
       platform: PENDING_CALLBACK_PLATFORM,
       type: "withdraw_rewards",
-      assets: [{
-        symbol: asset,
-      }],
-    }),
+      assets: [
+        {
+          symbol: asset,
+        },
+      ],
+    })
   );
 };
 
@@ -250,10 +263,9 @@ export const getRewards = async (accountAddress = null) => {
   for (const asset of await getSupportedAssets(web3)) {
     const assetAddress = await getContractAddress(web3, asset);
 
-    const assetReward = await poolContract.methods.pendingReward(
-      assetAddress,
-      accountAddress,
-    ).call();
+    const assetReward = await poolContract.methods
+      .pendingReward(assetAddress, accountAddress)
+      .call();
 
     rewards[asset] = denormalizeAmount(network, asset, assetReward);
   }
