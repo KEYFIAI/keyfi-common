@@ -104,7 +104,7 @@ export const getStaked = async (accountAddress, onlyForLP = false) => {
         KEYFIBUSD_LP: balance["KEYFIBUSD_LP"],
       };
     }
-    if (BigNumber(balance.KEYFIUSDCLP).gt(0)) {
+    if (BigNumber(balance.KEYFIBUSD_LP).gt(0)) {
       const pairBalance = balance.KEYFIUSDCLP;
       delete balance["KEYFIBUSD_LP"];
 
