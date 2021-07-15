@@ -98,28 +98,50 @@ export const getStaked = async (accountAddress, onlyForLP = false) => {
   const network = await getNetwork(web3);
   let balance = await getBalance(accountAddress, { web3 });
 
-  if (onlyForLP) {
-    balance = {
-      KEYFIUSDCLP: balance["KEYFIUSDCLP"],
-    };
+  if (network.chainId === 56) {
+    if (onlyForLP) {
+      balance = {
+        KEYFIBUSD_LP: balance["KEYFIBUSD_LP"],
+      };
+    }
+    if (BigNumber(balance.KEYFIUSDCLP).gt(0)) {
+      const pairBalance = balance.KEYFIUSDCLP;
+      delete balance["KEYFIBUSD_LP"];
+
+      const pair = await getAccountLiquidity("BUSD", "KEYFI", null, {
+        balance: normalizeAmount(network, "KEYFIBUSD_LP", pairBalance),
+      });
+
+      balance.KEYFI = BigNumber(balance.KEYFI ? balance.KEYFI : 0)
+        .plus(pair.KEYFI)
+        .toFixed();
+      balance.BUSD = BigNumber(balance.BUSD ? balance.BUSD : 0)
+        .plus(pair.BUSD)
+        .toFixed();
+    }
+  } else {
+    if (onlyForLP) {
+      balance = {
+        KEYFIUSDCLP: balance["KEYFIUSDCLP"],
+      };
+    }
+
+    if (BigNumber(balance.KEYFIUSDCLP).gt(0)) {
+      const pairBalance = balance.KEYFIUSDCLP;
+      delete balance["KEYFIUSDCLP"];
+
+      const pair = await getAccountLiquidity("USDC", "KEYFI", null, {
+        balance: normalizeAmount(network, "KEYFIUSDCLP", pairBalance),
+      });
+
+      balance.KEYFI = BigNumber(balance.KEYFI ? balance.KEYFI : 0)
+        .plus(pair.KEYFI)
+        .toFixed();
+      balance.USDC = BigNumber(balance.USDC ? balance.USDC : 0)
+        .plus(pair.USDC)
+        .toFixed();
+    }
   }
-
-  if (BigNumber(balance.KEYFIUSDCLP).gt(0)) {
-    const pairBalance = balance.KEYFIUSDCLP;
-    delete balance["KEYFIUSDCLP"];
-
-    const pair = await getAccountLiquidity("USDC", "KEYFI", null, {
-      balance: normalizeAmount(network, "KEYFIUSDCLP", pairBalance),
-    });
-
-    balance.KEYFI = BigNumber(balance.KEYFI ? balance.KEYFI : 0)
-      .plus(pair.KEYFI)
-      .toFixed();
-    balance.USDC = BigNumber(balance.USDC ? balance.USDC : 0)
-      .plus(pair.USDC)
-      .toFixed();
-  }
-
   return balance;
 };
 
