@@ -1,4 +1,3 @@
-import axios from "axios";
 import BigNumber from "bignumber.js";
 import routerAbi from "./abi/routerv2.abi.json";
 import factoryAbi from "./abi/factoryAbi.abi.json";
@@ -101,7 +100,7 @@ export const isPairAvailable = async (assetA, assetB) => {
   );
 };
 
-export const getAvailablePairedAssets = async (mainAsset, tokenPairs) => {
+export const getAvailablePairedAssets = async (mainAsset) => {
   mainAsset = mainAsset === "BNB" ? "WBNB" : mainAsset;
 
   const web3 = await getWeb3();

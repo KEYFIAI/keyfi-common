@@ -13,6 +13,7 @@ import {
   processWeb3OrNetworkArgument,
 } from "../common";
 import { getAccountLiquidity } from "../uniswap";
+import { getAccountLiquidity as getAccountLiquidityBSC } from "../pancakeswap";
 
 const GAS_LIMIT = 250000;
 const PENDING_CALLBACK_PLATFORM = "keyfi rewardpool";
@@ -108,7 +109,7 @@ export const getStaked = async (accountAddress, onlyForLP = false) => {
       const pairBalance = balance.KEYFIUSDCLP;
       delete balance["KEYFIBUSD_LP"];
 
-      const pair = await getAccountLiquidity("BUSD", "KEYFI", null, {
+      const pair = await getAccountLiquidityBSC("BUSD", "KEYFI", null, {
         balance: normalizeAmount(network, "KEYFIBUSD_LP", pairBalance),
       });
 
