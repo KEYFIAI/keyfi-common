@@ -93,10 +93,16 @@ export const getBalance = async (accountAddress = null, options = {}) => {
  *  getBalance() -> { KEY: 100, KEYFIUSDCLP: 0.001 }
  *  getStaked()  -> { KEY: 100, KEYFI: 200, USDC: 20 }
  */
-export const getStaked = async (accountAddress) => {
+export const getStaked = async (accountAddress, onlyForLP = false) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   let balance = await getBalance(accountAddress, { web3 });
+
+  if (onlyForLP) {
+    balance = {
+      KEYFIUSDCLP: balance["KEYFIUSDCLP"],
+    };
+  }
 
   if (BigNumber(balance.KEYFIUSDCLP).gt(0)) {
     const pairBalance = balance.KEYFIUSDCLP;
