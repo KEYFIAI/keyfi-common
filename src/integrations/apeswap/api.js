@@ -533,6 +533,7 @@ export const addLiquidity = async (
 
   if (assetB === "BNB") {
     [assetA, assetB] = [assetB, assetA];
+    [assetAAmount, assetBAmount] = [assetBAmount, assetAAmount];
   }
 
   const web3 = await getWeb3();
