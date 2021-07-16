@@ -459,7 +459,7 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
             const symbol = await tokenContract.methods.symbol().call();
             const decimals = await tokenContract.methods.decimals().call();
             return {
-              symbol,
+              symbol: symbol === "WBNB" ? "BNB" : symbol,
               decimals,
             };
           })
