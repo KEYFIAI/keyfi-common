@@ -290,6 +290,7 @@ export const decimals = {
     XOR: 18,
   },
   "bsc-mainnet": {
+    "APE-LP": 18,
     ETH: 18,
     BNB: 18,
     KEYFI: 18,
