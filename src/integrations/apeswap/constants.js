@@ -68,15 +68,6 @@ const supportedPairs = [
     },
   },
   {
-    id: "0x80862c12e6c339223cc9f4502fe60683c4e477df",
-    token0: {
-      symbol: "KEYFI",
-    },
-    token1: {
-      symbol: "BUSD",
-    },
-  },
-  {
     id: "0xf65c1c0478efde3c19b49ecbe7acc57bb6b1d713",
     token0: {
       symbol: "BANANA",
@@ -95,18 +86,18 @@ const supportedPairs = [
     },
   },
   {
-    id: "0x7bd46f6da97312ac2dbd1749f82e202764c0b914",
+    id: "0x51e6d27fa57373d8d4c256231241053a70cb1d93",
     token0: {
-      symbol: "BANANA",
+      symbol: "WBNB",
     },
     token1: {
       symbol: "BUSD",
     },
   },
   {
-    id: "0x51e6d27fa57373d8d4c256231241053a70cb1d93",
+    id: "0x7bd46f6da97312ac2dbd1749f82e202764c0b914",
     token0: {
-      symbol: "WBNB",
+      symbol: "BANANA",
     },
     token1: {
       symbol: "BUSD",
