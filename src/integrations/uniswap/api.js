@@ -344,12 +344,14 @@ export const getLiquidity = async (assetA, assetB, options = {}) => {
   const pairAddress = await getPairAddress(web3, assetAAddress, assetBAddress);
   const pairContract = new web3.eth.Contract(pairAbi, pairAddress);
   const result = await pairContract.methods.getReserves().call();
+  const totalSupply = await pairContract.methods.totalSupply().call();
 
   if (options.raw) {
     return {
       [assetA]: result._reserve0,
       [assetB]: result._reserve1,
       blockTimestampLast: result._blockTimestampLast,
+      totalSupply,
     };
   }
 
@@ -359,14 +361,32 @@ export const getLiquidity = async (assetA, assetB, options = {}) => {
     [assetA]: denormalizeAmount(network, assetA, result._reserve0),
     [assetB]: denormalizeAmount(network, assetB, result._reserve1),
     blockTimestampLast: result._blockTimestampLast,
+    totalSupply: denormalizeAmount(network, "UNI-V2", totalSupply),
   };
 };
 
-export const getPrice = async (assetWhat, assetTo, options = {}) => {
+export const getPrice = async (
+  assetWhat,
+  assetTo,
+  assetWhatBalance,
+  options = {}
+) => {
   const liquidity = await getLiquidity(assetWhat, assetTo, options);
-  return BigNumber(liquidity[assetTo])
-    .dividedBy(liquidity[assetWhat])
-    .toFixed();
+
+  const totalSupply = parseFloat(liquidity.totalSupply);
+  const token0reserves = parseFloat(liquidity[assetWhat]);
+  const token0 = parseFloat(assetWhatBalance);
+
+  const assetSupply = (token0 / token0reserves / 2) * 2 * totalSupply;
+
+  return {
+    price: BigNumber(liquidity[assetTo])
+      .dividedBy(liquidity[assetWhat])
+      .toFixed(),
+    [assetWhat]: liquidity[assetWhat],
+    [assetTo]: liquidity[assetTo],
+    shareOfPool: assetSupply / (totalSupply + assetSupply),
+  };
 };
 
 export const getAccountLiquidity = async (

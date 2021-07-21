@@ -21,7 +21,7 @@ const DEFAULT_MAX_SLIPPAGE = 0.005;
 const GAS_LIMIT = 300000;
 const PENDING_CALLBACK_PLATFORM = "pancakeswap";
 
-const UNSUPPORTED_ASSETS = ["Routerv2", "Factory"];
+const UNSUPPORTED_ASSETS = ["Routerv2", "Factory", "Router", "Factoryv2"];
 
 const calculateMinAmount = (amount, slippage) =>
   new BigNumber(amount).multipliedBy(1 - slippage).toFixed(0);
@@ -57,7 +57,7 @@ export const getContractAddress = async (web3, contractName) => {
   );
 };
 
-const getAssetAddress = async (web3, asset) => {
+export const getAssetAddress = async (web3, asset) => {
   if (asset === "BNB" || asset === "WBNB") {
     return getContractAddress(web3, "wBNB");
   }
@@ -421,19 +421,110 @@ export const getAccountLiquidity = async (
   };
 };
 
-// export const getAccountLiquidityAll = async (address = null) => {
-//   const web3 = await getWeb3();
+export const getAccountLiquidityAll = async (address = null, options = {}) => {
+  const web3 = await getWeb3();
 
-//   if (!(await isSupportedNetwork(web3))) {
-//     return []
-//   }
+  if (!(await isSupportedNetwork(web3))) {
+    return [];
+  }
 
-//   if (!address) {
-//     address = getCurrentAccountAddress(web3)
-//   }
+  if (!address) {
+    address = getCurrentAccountAddress(web3);
+  }
 
-//   const res = await
-// }
+  const factoryAddress = await getContractAddress(web3, "Factory");
+  const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
+
+  let pairLengthInArray = [];
+  let pairs = [];
+
+  function range(start, end) {
+    return Array(end - start + 1)
+      .fill()
+      .map((_, idx) => start + idx);
+  }
+
+  pairLengthInArray = range(0, 2000);
+
+  await Promise.all(
+    pairLengthInArray.map(async (pair) => {
+      const pairId = await factoryContract.methods.allPairs(pair).call();
+
+      const pairContract = new web3.eth.Contract(pairAbi, pairId);
+      const totalSupply = await pairContract.methods.totalSupply().call();
+      const balance = await pairContract.methods.balanceOf(address).call();
+      const liquidityPercent = new BigNumber(balance).dividedBy(totalSupply);
+
+      if (liquidityPercent > 0) {
+        const token0 = await pairContract.methods.token0().call();
+        const token1 = await pairContract.methods.token1().call();
+
+        const [assetA, assetB] = await Promise.all(
+          [token0, token1].map(async (token) => {
+            const tokenContract = new web3.eth.Contract(pairAbi, token);
+            const symbol = await tokenContract.methods.symbol().call();
+            const decimals = await tokenContract.methods.decimals().call();
+            return {
+              symbol: symbol === "WBNB" ? "BNB" : symbol,
+              decimals,
+            };
+          })
+        );
+        let pairReserves = await pairContract.methods.getReserves().call();
+        pairReserves = {
+          [assetA.symbol]: pairReserves._reserve0,
+          [assetB.symbol]: pairReserves._reserve1,
+        };
+
+        const network = await getNetwork(web3);
+
+        const pairObject = {
+          assetA: assetA.symbol,
+          assetB: assetB.symbol,
+          [assetA.symbol]: options.raw
+            ? liquidityPercent
+                .multipliedBy(pairReserves[assetA.symbol])
+                .dividedToIntegerBy(1)
+                .toFixed(0)
+            : liquidityPercent
+                .multipliedBy(
+                  denormalizeAmount(
+                    network,
+                    assetA.symbol,
+                    pairReserves[assetA.symbol],
+                    assetB.decimals
+                  )
+                )
+                .toFixed(),
+          [assetB.symbol]: options.raw
+            ? liquidityPercent
+                .multipliedBy(pairReserves[assetB.symbol])
+                .dividedToIntegerBy(1)
+                .toFixed(0)
+            : liquidityPercent
+                .multipliedBy(
+                  denormalizeAmount(
+                    network,
+                    assetB.symbol,
+                    pairReserves[assetB.symbol],
+                    assetB.decimals
+                  )
+                )
+                .toFixed(),
+          liquidity: options.raw
+            ? balance
+            : denormalizeAmount(network, "CAKE-V2", balance),
+          totalLiquidity: totalSupply,
+          liquidityPercent: liquidityPercent.toFixed(),
+        };
+
+        pairs = [...pairs, pairObject];
+      }
+    })
+  );
+
+  return pairs;
+};
 
 export const addLiquidity = async (
   assetA,

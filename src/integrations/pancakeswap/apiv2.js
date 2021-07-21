@@ -1,79 +1,51 @@
 import BigNumber from "bignumber.js";
-import routerAbi from "./abi/router.abi.json";
 import factoryAbi from "./abi/factoryAbi.abi.json";
 import pairAbi from "./abi/pair.abi.json";
+import routerAbi from "./abi/routerv2.abi.json";
 import {
-  denormalizeAmount,
-  normalizeAmount,
-  getNetwork,
-  getWeb3,
-  processWeb3OrNetworkArgument,
-  getCurrentAccountAddress,
   approveErc20IfNeeded,
+  denormalizeAmount,
+  getCurrentAccountAddress,
+  getNetwork,
   getPendingTrxCallback,
   getTrxOverrides,
+  getWeb3,
+  normalizeAmount,
+  processWeb3OrNetworkArgument,
 } from "../common";
-import { contractAddresses, supportedPairs } from "./constants";
-import { erc20Addresses } from "../common/constants";
-import { NULL_ADDRESS, PAIR_NOT_EXISTS } from "./constants";
+import { getAssetAddress, getContractAddress } from "./api";
+import {
+  contractAddresses,
+  NULL_ADDRESS,
+  PAIR_NOT_EXISTS,
+  supportedPairsv2,
+} from "./constants";
 
 const DEFAULT_MAX_SLIPPAGE = 0.005;
 const GAS_LIMIT = 300000;
-const PENDING_CALLBACK_PLATFORM = "apeswap";
-
-const UNSUPPORTED_ASSETS = ["Router", "Factory"];
+const PENDING_CALLBACK_PLATFORM = "pancakeswap";
 
 const calculateMinAmount = (amount, slippage) =>
   new BigNumber(amount).multipliedBy(1 - slippage).toFixed(0);
 
-const getDefaultDeadline = () => Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
+const getDefaultDeadline = () => Math.floor(Date.now() / 1000) + 60 * 20;
 
 export const isSupportedNetwork = async (web3OrNetwork) => {
   const network = await processWeb3OrNetworkArgument(web3OrNetwork);
   return Boolean(contractAddresses[network.name]);
 };
 
-export const getContractAddress = async (web3, contractName) => {
-  const network = await getNetwork(web3);
-
-  if (!(await isSupportedNetwork(network))) {
-    throw new Error(`Network with chainId=${network.chainId} is not supported`);
-  }
-
-  const address = contractAddresses[network.name][contractName];
-  if (address) {
-    return address;
-  }
-
-  if (erc20Addresses[network.name]) {
-    const erc20Address = erc20Addresses[network.name][contractName];
-    if (erc20Address) {
-      return erc20Address;
-    }
-  }
-
-  throw new Error(
-    `Unknown contract: '${contractName}' on '${network.name}' network`
-  );
-};
-
-const getAssetAddress = async (web3, asset) => {
-  if (asset === "BNB" || asset === "WBNB") {
-    return getContractAddress(web3, "wBNB");
-  }
-
-  return getContractAddress(web3, asset);
-};
-
-export const getPairAddress = async (web3, assetAAddress, assetBAddress) => {
-  const factoryAddress = await getContractAddress(web3, "Factory");
+export const getPairAddress = async (web3, assetAAdress, assetBAddress) => {
+  const factoryAddress = await getContractAddress(web3, "Factoryv2");
   const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
   const pairAddress = await factoryContract.methods
-    .getPair(assetAAddress, assetBAddress)
+    .getPair(assetAAdress, assetBAddress)
     .call();
 
   if (pairAddress === NULL_ADDRESS) {
-    const error = new Error("Pair does not exist");
+    const error = new Error(
+      `Pair ${assetAAdress}-${assetBAddress} does not exist`
+    );
     error.code = PAIR_NOT_EXISTS;
     throw error;
   }
@@ -93,11 +65,17 @@ export const isPairAvailable = async (assetA, assetB) => {
     );
   }
 
-  return supportedPairs.some(
-    (x) =>
-      (x.token0.symbol === assetA || x.token1.symbol === assetA) &&
-      (x.token0.symbol === assetB || x.token1.symbol === assetB)
+  const [assetAAddress, assetBAddress] = await Promise.all([
+    getAssetAddress(web3, assetA),
+    getAssetAddress(web3, assetB),
+  ]);
+  const pairAddress = await getPairAddress(web3, assetAAddress, assetBAddress);
+
+  const pairIndex = supportedPairsv2.findIndex(
+    (item) => item.id === pairAddress
   );
+
+  return Boolean(pairIndex >= 0);
 };
 
 export const getAvailablePairedAssets = async (mainAsset) => {
@@ -111,7 +89,7 @@ export const getAvailablePairedAssets = async (mainAsset) => {
     );
   }
 
-  const paired = supportedPairs.reduce((listOfPairedAssets, pair) => {
+  const paired = supportedPairsv2.reduce((listOfPairedAssets, pair) => {
     if (pair.token0.symbol.toUpperCase() === mainAsset) {
       listOfPairedAssets.push(pair.token1.symbol.toUpperCase());
     } else if (pair.token1.symbol.toUpperCase() === mainAsset) {
@@ -176,14 +154,14 @@ export const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
 
 export const estimateSwap = async (
   fromAssetSymbol,
-  fromAmount,
-  toAssetSymbol
+  amount,
+  toAssetSymbol,
+  reverse = false
 ) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
-  fromAmount = normalizeAmount(network, fromAssetSymbol, fromAmount);
 
-  const routerAddress = await getContractAddress(web3, "Router");
+  const routerAddress = await getContractAddress(web3, "Routerv2");
   const routerContract = new web3.eth.Contract(routerAbi, routerAddress);
 
   const route = await findRoute(fromAssetSymbol, toAssetSymbol);
@@ -191,17 +169,67 @@ export const estimateSwap = async (
     route.map((symbol) => getAssetAddress(web3, symbol))
   );
 
-  const result = await routerContract.methods
-    .getAmountsOut(fromAmount, routeAddresses)
-    .call();
+  let result;
 
-  const resultLast = result[result.length - 1];
+  if (reverse) {
+    amount = normalizeAmount(network, toAssetSymbol, amount);
+    result = await routerContract.methods
+      .getAmountsIn(amount, routeAddresses)
+      .call();
 
-  return {
-    returnAmount: resultLast,
-    returnAmountHuman: denormalizeAmount(network, toAssetSymbol, resultLast),
-    route,
-  };
+    const resultFirst = result[0];
+    const resultLast = result[result.length - 1];
+
+    const lastPairAddress = await getPairAddress(
+      web3,
+      routeAddresses[routeAddresses.length - 1],
+      routeAddresses[routeAddresses.length - 2]
+    );
+
+    const pairContract = new web3.eth.Contract(pairAbi, lastPairAddress);
+    const { _reserve1 } = await pairContract.methods.getReserves().call();
+
+    return {
+      priceImpact: (
+        (parseFloat(resultLast) / parseFloat(_reserve1)) *
+        100
+      ).toString(),
+      fromAmount: resultFirst,
+      fromAmountHuman: denormalizeAmount(network, fromAssetSymbol, resultFirst),
+      returnAmount: resultLast,
+      returnAmountHuman: denormalizeAmount(network, toAssetSymbol, resultLast),
+      route,
+    };
+  } else {
+    amount = normalizeAmount(network, fromAssetSymbol, amount);
+    result = await routerContract.methods
+      .getAmountsOut(amount, routeAddresses)
+      .call();
+
+    const resultFirst = result[0];
+    const resultLast = result[result.length - 1];
+
+    const lastPairAddress = await getPairAddress(
+      web3,
+      routeAddresses[routeAddresses.length - 1],
+      routeAddresses[routeAddresses.length - 2]
+    );
+
+    const pairContract = new web3.eth.Contract(pairAbi, lastPairAddress);
+    const { _reserve1 } = await pairContract.methods.getReserves().call();
+
+    return {
+      priceImpact: (
+        (parseFloat(resultLast) / parseFloat(_reserve1)) *
+        100
+      ).toString(),
+      fromAmount: resultFirst,
+      fromAmountHuman: denormalizeAmount(network, fromAssetSymbol, resultFirst),
+      returnAmount: resultLast,
+      returnAmountHuman: denormalizeAmount(network, toAssetSymbol, resultLast),
+      route,
+    };
+  }
 };
 
 export const swap = async (
@@ -213,11 +241,7 @@ export const swap = async (
 ) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
-  const fromAmountDecimalized = normalizeAmount(
-    network,
-    fromAssetSymbol,
-    fromAmount
-  );
+  const fromAmountNorm = normalizeAmount(network, fromAssetSymbol, fromAmount);
 
   if (!estimation || !estimation.returnAmount) {
     throw new Error("No estimation have passed as arg!");
@@ -226,16 +250,17 @@ export const swap = async (
   const accountAddress = getCurrentAccountAddress(web3);
   const trxOverrides = getTrxOverrides(options);
   const routeAddresses = await Promise.all(
-    estimation.route.map((symbol) => getAssetAddress(web3, symbol))
+    estimation.route.map((assetSymbol) => getAssetAddress(web3, assetSymbol))
   );
-  const routerAddress = await getContractAddress(web3, "Router");
+
+  const routerAddress = await getContractAddress(web3, "Routerv2");
 
   if (fromAssetSymbol !== "BNB") {
     await approveErc20IfNeeded(
       web3,
       routeAddresses[0],
       routerAddress,
-      fromAmountDecimalized,
+      fromAmountNorm,
       {
         gas: GAS_LIMIT,
         ...trxOverrides,
@@ -274,7 +299,7 @@ export const swap = async (
       .send(
         {
           from: accountAddress,
-          value: fromAmountDecimalized,
+          value: fromAmountNorm,
           gas: GAS_LIMIT,
           ...trxOverrides,
         },
@@ -293,11 +318,11 @@ export const swap = async (
 
   const method =
     toAssetSymbol === "BNB"
-      ? routerContract.methods.swapExactTokensForETH
+      ? routerContract.methods.swapExactETHForTokens
       : routerContract.methods.swapExactTokensForTokens;
 
   return method(
-    fromAmountDecimalized,
+    fromAmountNorm,
     minReturn,
     routeAddresses,
     accountAddress,
@@ -326,6 +351,7 @@ export const getLiquidity = async (assetA, assetB, options = {}) => {
 
   let assetAAddress = await getAssetAddress(web3, assetA);
   let assetBAddress = await getAssetAddress(web3, assetB);
+
   if (assetAAddress.toLowerCase() > assetBAddress.toLowerCase()) {
     [assetA, assetB] = [assetB, assetA];
     [assetAAddress, assetBAddress] = [assetBAddress, assetAAddress];
@@ -333,14 +359,15 @@ export const getLiquidity = async (assetA, assetB, options = {}) => {
 
   const pairAddress = await getPairAddress(web3, assetAAddress, assetBAddress);
   const pairContract = new web3.eth.Contract(pairAbi, pairAddress);
-  const result = await pairContract.methods.getReserves().call();
+  const { _reserve0, _reserve1, _blockTimestampLast } =
+    await pairContract.methods.getReserves().call();
   const totalSupply = await pairContract.methods.totalSupply().call();
 
   if (options.raw) {
     return {
-      [assetA]: result._reserve0,
-      [assetB]: result._reserve1,
-      blockTimestampLast: result._blockTimestampLast,
+      [assetA]: _reserve0,
+      [assetB]: _reserve1,
+      blockTimestampLast: _blockTimestampLast,
       totalSupply,
     };
   }
@@ -348,10 +375,10 @@ export const getLiquidity = async (assetA, assetB, options = {}) => {
   const network = await getNetwork(web3);
 
   return {
-    [assetA]: denormalizeAmount(network, assetA, result._reserve0),
-    [assetB]: denormalizeAmount(network, assetB, result._reserve1),
-    blockTimestampLast: result._blockTimestampLast,
-    totalSupply: denormalizeAmount(network, "APE-LP", totalSupply),
+    [assetA]: denormalizeAmount(network, assetA, _reserve0),
+    [assetB]: denormalizeAmount(network, assetB, _reserve1),
+    blockTimestampLast: _blockTimestampLast,
+    totalSupply: denormalizeAmount(network, "CAKE-V2", totalSupply),
   };
 };
 
@@ -362,11 +389,11 @@ export const getPrice = async (
   options = {}
 ) => {
   const liquidity = await getLiquidity(assetWhat, assetTo, options);
-
   const totalSupply = parseFloat(liquidity.totalSupply);
   const token0reserves = parseFloat(liquidity[assetWhat]);
   const token0 = parseFloat(assetWhatBalance);
 
+  // Calculates, how much LP tokens User recieves
   const assetSupply = (token0 / token0reserves / 2) * 2 * totalSupply;
 
   return {
@@ -434,7 +461,7 @@ export const getAccountLiquidity = async (
     [assetB]: liquidityPercent
       .multipliedBy(denormalizeAmount(network, assetB, pairLiquidity[assetB]))
       .toFixed(),
-    liquidity: denormalizeAmount(network, "APE-LP", balance),
+    liquidity: denormalizeAmount(network, "CAKE-V2", balance),
     totalLiquidity: totalSupply,
     liquidityPercent: liquidityPercent.toFixed(),
   };
@@ -451,13 +478,19 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
     address = getCurrentAccountAddress(web3);
   }
 
-  const factoryAddress = await getContractAddress(web3, "Factory");
+  const factoryAddress = await getContractAddress(web3, "Factoryv2");
   const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
-  const pairsLength = await factoryContract.methods.allPairsLength().call();
 
-  const pairLengthInArray = [...Array(Number(pairsLength)).keys()];
-
+  let pairLengthInArray = [];
   let pairs = [];
+
+  function range(start, end) {
+    return Array(end - start + 1)
+      .fill()
+      .map((_, idx) => start + idx);
+  }
+
+  pairLengthInArray = range(0, 2000);
 
   await Promise.all(
     pairLengthInArray.map(async (pair) => {
@@ -526,7 +559,7 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
                 .toFixed(),
           liquidity: options.raw
             ? balance
-            : denormalizeAmount(network, "APE-LP", balance),
+            : denormalizeAmount(network, "CAKE-V2", balance),
           totalLiquidity: totalSupply,
           liquidityPercent: liquidityPercent.toFixed(),
         };
@@ -561,7 +594,7 @@ export const addLiquidity = async (
   const assetBAmountNorm = normalizeAmount(network, assetB, assetBAmount);
 
   const account = getCurrentAccountAddress(web3);
-  const routerAddress = await getContractAddress(web3, "Router");
+  const routerAddress = await getContractAddress(web3, "Routerv2");
   const assetAAddress = await getAssetAddress(web3, assetA);
   const assetBAddress = await getAssetAddress(web3, assetB);
   const trxOverrides = getTrxOverrides(options);
@@ -719,7 +752,7 @@ export const removeLiquidity = async (
     .dividedToIntegerBy(1)
     .toFixed();
 
-  const routerAddress = await getContractAddress(web3, "Router");
+  const routerAddress = await getContractAddress(web3, "Routerv2");
   const assetAAddress = await getAssetAddress(web3, assetA);
   const assetBAddress = await getAssetAddress(web3, assetB);
   const pairAddress = await getPairAddress(web3, assetAAddress, assetBAddress);
@@ -742,8 +775,8 @@ export const removeLiquidity = async (
         platform: PENDING_CALLBACK_PLATFORM,
         assets: [
           {
-            symbol: "APE-LP",
-            amount: denormalizeAmount(network, "APE-LP", liquidityToBurn),
+            symbol: "CAKE-V2",
+            amount: denormalizeAmount(network, "CAKE-V2", liquidityToBurn),
           },
         ],
       },
@@ -834,21 +867,4 @@ export const removeLiquidity = async (
         ],
       })
     );
-};
-
-const getSupportedAssetsMapUnfiltered = async () => {
-  const web3 = await getWeb3();
-  const { name } = await getNetwork(web3);
-
-  if (name === "bsc-mainnet" || name === "bsc-testnet") {
-    return contractAddresses[name];
-  }
-
-  throw new Error("ApeSwap only support BSC");
-};
-
-export const getSupportedAssets = async () => {
-  return Object.keys(await getSupportedAssetsMapUnfiltered())
-    .filter((asset) => !UNSUPPORTED_ASSETS.includes(asset))
-    .concat("BNB");
 };
