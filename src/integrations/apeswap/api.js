@@ -12,6 +12,7 @@ import {
   approveErc20IfNeeded,
   getPendingTrxCallback,
   getTrxOverrides,
+  makeBatchRequest,
 } from "../common";
 import { contractAddresses, supportedPairs } from "./constants";
 import { erc20Addresses } from "../common/constants";
@@ -464,19 +465,26 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
       const pairId = await factoryContract.methods.allPairs(pair).call();
 
       const pairContract = new web3.eth.Contract(pairAbi, pairId);
-      const totalSupply = await pairContract.methods.totalSupply().call();
-      const balance = await pairContract.methods.balanceOf(address).call();
-      const liquidityPercent = new BigNumber(balance).dividedBy(totalSupply);
 
-      if (liquidityPercent > 0) {
-        const token0 = await pairContract.methods.token0().call();
-        const token1 = await pairContract.methods.token1().call();
+      const [totalSupply, balance] = await makeBatchRequest([
+        pairContract.methods.totalSupply().call,
+        pairContract.methods.balanceOf(address).call,
+      ]);
+
+      if (balance !== "0") {
+        const liquidityPercent = new BigNumber(balance).dividedBy(totalSupply);
+        const [token0, token1] = await makeBatchRequest([
+          pairContract.methods.token0().call,
+          pairContract.methods.token1().call,
+        ]);
 
         const [assetA, assetB] = await Promise.all(
           [token0, token1].map(async (token) => {
             const tokenContract = new web3.eth.Contract(pairAbi, token);
-            const symbol = await tokenContract.methods.symbol().call();
-            const decimals = await tokenContract.methods.decimals().call();
+            const [symbol, decimals] = await makeBatchRequest([
+              tokenContract.methods.symbol().call,
+              tokenContract.methods.decimals().call,
+            ]);
             return {
               symbol: symbol === "WBNB" ? "BNB" : symbol,
               decimals,
@@ -530,8 +538,7 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
           totalLiquidity: totalSupply,
           liquidityPercent: liquidityPercent.toFixed(),
         };
-
-        pairs = [...pairs, pairObject];
+        return pairs.push(pairObject);
       }
     })
   );
