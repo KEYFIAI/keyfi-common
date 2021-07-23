@@ -1,4 +1,3 @@
-import axios from "axios";
 import BigNumber from "bignumber.js";
 
 import {
@@ -22,14 +21,12 @@ import {
   normalizeAmount,
   denormalizeAmount,
   processWeb3OrNetworkArgument,
+  makeBatchRequest,
 } from "../common";
-import { userLiquidityQuery } from "./graphql";
 
 export const DEFAULT_MAX_SLIPPAGE = 0.005;
 const GAS_LIMIT = 300000;
 const PENDING_CALLBACK_PLATFORM = "uniswap";
-const UNISWAP_GRAPHQL_URL =
-  "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2";
 const UNSUPPORTED_ASSETS = ["KEYFIUSDCLP", "KEYFIETH_LP"];
 
 const calculateMinAmount = (amount, slippage) =>
@@ -449,7 +446,7 @@ export const getAccountLiquidity = async (
   };
 };
 
-export const getAccountLiquidityAll = async (address = null) => {
+export const getAccountLiquidityAll = async (address = null, options = {}) => {
   const web3 = await getWeb3();
 
   if (!(await isSupportedNetwork(web3))) {
@@ -460,51 +457,98 @@ export const getAccountLiquidityAll = async (address = null) => {
     address = getCurrentAccountAddress(web3);
   }
 
-  const res = await axios.post(UNISWAP_GRAPHQL_URL, {
-    query: userLiquidityQuery.replace("$ACCOUNT_ADDRESS", address),
-  });
+  // const factoryAddress = await getContractAddress(web3, "Factory");
+  // const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
+  // const pairsLength = await factoryContract.methods.allPairsLength().call();
 
-  const liquidityPositions = res.data.data.user
-    ? res.data.data.user.liquidityPositions
-    : [];
-  const supportedAssets = await getSupportedAssets();
+  // const pairLengthInArray = [...Array(Number(pairsLength)).keys()];
 
-  const liquidityAll = liquidityPositions.reduce((pairs, liquidityPair) => {
-    const assetA = liquidityPair.pair.token0.symbol;
-    const assetB = liquidityPair.pair.token1.symbol;
+  let pairs = [];
 
-    if (supportedAssets.includes(assetA) && supportedAssets.includes(assetB)) {
-      const { totalSupply } = liquidityPair.pair;
-      const liquidityBalance = BigNumber(liquidityPair.liquidityTokenBalance);
-      const liquidityPercent = liquidityBalance.dividedBy(totalSupply);
+  await Promise.all(
+    availablePairs.mainnet.map(async (pair) => {
+      const pairId = pair.address;
 
-      if (liquidityPercent > 0) {
-        pairs.push({
-          assetA,
-          assetB,
-          [assetA]: liquidityPercent
-            .multipliedBy(liquidityPair.pair.reserve0)
-            .toFixed(),
-          [assetB]: liquidityPercent
-            .multipliedBy(liquidityPair.pair.reserve1)
-            .toFixed(),
-          liquidity: liquidityPair.liquidityTokenBalance,
+      const pairContract = new web3.eth.Contract(pairAbi, pairId);
+
+      const [totalSupply, balance] = await makeBatchRequest([
+        pairContract.methods.totalSupply().call,
+        pairContract.methods.balanceOf(address).call,
+      ]);
+
+      if (balance !== "0") {
+        const liquidityPercent = new BigNumber(balance).dividedBy(totalSupply);
+        const [token0, token1] = await makeBatchRequest([
+          pairContract.methods.token0().call,
+          pairContract.methods.token1().call,
+        ]);
+
+        const [assetA, assetB] = await Promise.all(
+          [token0, token1].map(async (token) => {
+            const tokenContract = new web3.eth.Contract(pairAbi, token);
+            const [symbol, decimals] = await makeBatchRequest([
+              tokenContract.methods.symbol().call,
+              tokenContract.methods.decimals().call,
+            ]);
+            return {
+              symbol: symbol === "WETH" ? "ETH" : symbol,
+              decimals,
+            };
+          })
+        );
+        let pairReserves = await pairContract.methods.getReserves().call();
+        pairReserves = {
+          [assetA.symbol]: pairReserves._reserve0,
+          [assetB.symbol]: pairReserves._reserve1,
+        };
+
+        const network = await getNetwork(web3);
+
+        const pairObject = {
+          assetA: assetA.symbol,
+          assetB: assetB.symbol,
+          [assetA.symbol]: options.raw
+            ? liquidityPercent
+                .multipliedBy(pairReserves[assetA.symbol])
+                .dividedToIntegerBy(1)
+                .toFixed(0)
+            : liquidityPercent
+                .multipliedBy(
+                  denormalizeAmount(
+                    network,
+                    assetA.symbol,
+                    pairReserves[assetA.symbol],
+                    assetB.decimals
+                  )
+                )
+                .toFixed(),
+          [assetB.symbol]: options.raw
+            ? liquidityPercent
+                .multipliedBy(pairReserves[assetB.symbol])
+                .dividedToIntegerBy(1)
+                .toFixed(0)
+            : liquidityPercent
+                .multipliedBy(
+                  denormalizeAmount(
+                    network,
+                    assetB.symbol,
+                    pairReserves[assetB.symbol],
+                    assetB.decimals
+                  )
+                )
+                .toFixed(),
+          liquidity: options.raw
+            ? balance
+            : denormalizeAmount(network, "UNI-V2", balance),
           totalLiquidity: totalSupply,
           liquidityPercent: liquidityPercent.toFixed(),
-        });
+        };
+        return pairs.push(pairObject);
       }
-    }
+    })
+  );
 
-    return pairs;
-  }, []);
-
-  // Fetch KEYFI/USDC liquidity from chain to be able to debug it on ganache
-  const keyfiLiquidity = await getAccountLiquidity("KEYFI", "USDC");
-  if (keyfiLiquidity.liquidity > 0) {
-    liquidityAll.push(keyfiLiquidity);
-  }
-
-  return liquidityAll;
+  return pairs;
 };
 
 export const addLiquidity = async (
