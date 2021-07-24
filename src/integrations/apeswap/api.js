@@ -13,6 +13,7 @@ import {
   getPendingTrxCallback,
   getTrxOverrides,
   makeBatchRequest,
+  promisifyBatchRequest,
 } from "../common";
 import { contractAddresses, supportedPairs } from "./constants";
 import { erc20Addresses } from "../common/constants";
@@ -454,43 +455,78 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
 
   const factoryAddress = await getContractAddress(web3, "Factory");
   const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
-  const pairsLength = await factoryContract.methods.allPairsLength().call();
-
-  const pairLengthInArray = [...Array(Number(pairsLength)).keys()];
 
   let pairs = [];
 
-  await Promise.all(
-    pairLengthInArray.map(async (pair) => {
-      const pairId = await factoryContract.methods.allPairs(pair).call();
+  function range(start, end) {
+    return Array(end - start + 1)
+      .fill()
+      .map((_, idx) => start + idx);
+  }
 
-      const pairContract = new web3.eth.Contract(pairAbi, pairId);
+  const pairLengthInArray = range(0, 800);
+  pairs = await makeBatchRequest(
+    pairLengthInArray.map((pair) => {
+      return factoryContract.methods.allPairs(pair).call;
+    })
+  );
 
-      const [totalSupply, balance] = await makeBatchRequest([
-        pairContract.methods.totalSupply().call,
-        pairContract.methods.balanceOf(address).call,
-      ]);
+  let batch = new web3.BatchRequest();
+  const promises = [];
 
-      if (balance !== "0") {
+  for (const pair of pairs) {
+    const pairContract = new web3.eth.Contract(pairAbi, pair);
+    const [totalSupply, balance, token0, token1] = [
+      promisifyBatchRequest(
+        batch,
+        pairContract.methods.totalSupply().call.request
+      ),
+      promisifyBatchRequest(
+        batch,
+        pairContract.methods.balanceOf(address).call.request
+      ),
+      promisifyBatchRequest(batch, pairContract.methods.token0().call.request),
+      promisifyBatchRequest(batch, pairContract.methods.token1().call.request),
+    ];
+
+    const promise = async () => {
+      const [totalSupplyRes, balanceRes, token0Res, token1Res] =
+        await Promise.all([totalSupply, balance, token0, token1]);
+      return {
+        address: pair,
+        totalSupply: totalSupplyRes,
+        balance: balanceRes,
+        token0: token0Res,
+        token1: token1Res,
+      };
+    };
+
+    promises.push(promise());
+  }
+
+  batch.execute();
+  const results = await Promise.all(promises);
+  let filteredResults = await Promise.all(
+    results
+      .filter((item) => item.balance !== "0")
+      .map(async (item) => {
+        const { token0, token1, balance, totalSupply, address } = item;
         const liquidityPercent = new BigNumber(balance).dividedBy(totalSupply);
-        const [token0, token1] = await makeBatchRequest([
-          pairContract.methods.token0().call,
-          pairContract.methods.token1().call,
-        ]);
+
+        const pairContract = new web3.eth.Contract(pairAbi, address);
 
         const [assetA, assetB] = await Promise.all(
           [token0, token1].map(async (token) => {
             const tokenContract = new web3.eth.Contract(pairAbi, token);
-            const [symbol, decimals] = await makeBatchRequest([
-              tokenContract.methods.symbol().call,
-              tokenContract.methods.decimals().call,
-            ]);
+            const symbol = await tokenContract.methods.symbol().call();
+            const decimals = await tokenContract.methods.decimals().call();
             return {
               symbol: symbol === "WBNB" ? "BNB" : symbol,
               decimals,
             };
           })
         );
+
         let pairReserves = await pairContract.methods.getReserves().call();
         pairReserves = {
           [assetA.symbol]: pairReserves._reserve0,
@@ -499,7 +535,7 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
 
         const network = await getNetwork(web3);
 
-        const pairObject = {
+        const dataObject = {
           assetA: assetA.symbol,
           assetB: assetB.symbol,
           [assetA.symbol]: options.raw
@@ -534,18 +570,17 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
                 .toFixed(),
           liquidity: options.raw
             ? balance
-            : denormalizeAmount(network, "APE-LP", balance),
+            : denormalizeAmount(network, "CAKE-V2", balance),
           totalLiquidity: totalSupply,
           liquidityPercent: liquidityPercent.toFixed(),
         };
-        return pairs.push(pairObject);
-      }
-    })
+
+        return dataObject;
+      })
   );
 
-  return pairs;
+  return filteredResults;
 };
-
 export const addLiquidity = async (
   assetA,
   assetAAmount,

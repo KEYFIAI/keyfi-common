@@ -10,8 +10,10 @@ import {
   getPendingTrxCallback,
   getTrxOverrides,
   getWeb3,
+  makeBatchRequest,
   normalizeAmount,
   processWeb3OrNetworkArgument,
+  promisifyBatchRequest,
 } from "../common";
 import { getAssetAddress, getContractAddress } from "./api";
 import {
@@ -481,7 +483,6 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
   const factoryAddress = await getContractAddress(web3, "Factoryv2");
   const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
 
-  let pairLengthInArray = [];
   let pairs = [];
 
   function range(start, end) {
@@ -490,20 +491,55 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
       .map((_, idx) => start + idx);
   }
 
-  pairLengthInArray = range(0, 2000);
+  const pairLengthInArray = range(0, 1000);
 
-  await Promise.all(
-    pairLengthInArray.map(async (pair) => {
-      const pairId = await factoryContract.methods.allPairs(pair).call();
+  pairs = await makeBatchRequest(
+    pairLengthInArray.map((pair) => {
+      return factoryContract.methods.allPairs(pair).call;
+    })
+  );
 
-      const pairContract = new web3.eth.Contract(pairAbi, pairId);
-      const totalSupply = await pairContract.methods.totalSupply().call();
-      const balance = await pairContract.methods.balanceOf(address).call();
-      const liquidityPercent = new BigNumber(balance).dividedBy(totalSupply);
+  let batch = new web3.BatchRequest();
+  const promises = [];
 
-      if (liquidityPercent > 0) {
-        const token0 = await pairContract.methods.token0().call();
-        const token1 = await pairContract.methods.token1().call();
+  for (const pair of pairs) {
+    const pairContract = new web3.eth.Contract(pairAbi, pair);
+    const [totalSupply, balance, token0, token1] = [
+      promisifyBatchRequest(
+        batch,
+        pairContract.methods.totalSupply().call.request
+      ),
+      promisifyBatchRequest(
+        batch,
+        pairContract.methods.balanceOf(address).call.request
+      ),
+      promisifyBatchRequest(batch, pairContract.methods.token0().call.request),
+      promisifyBatchRequest(batch, pairContract.methods.token1().call.request),
+    ];
+
+    const promise = async () => {
+      const [totalSupplyRes, balanceRes, token0Res, token1Res] =
+        await Promise.all([totalSupply, balance, token0, token1]);
+      return {
+        address: pair,
+        totalSupply: totalSupplyRes,
+        balance: balanceRes,
+        token0: token0Res,
+        token1: token1Res,
+      };
+    };
+
+    promises.push(promise());
+  }
+
+  batch.execute();
+  const results = await Promise.all(promises);
+  const filteredResults = await Promise.all(
+    results
+      .filter((item) => item.balance !== "0")
+      .map(async ({ token0, token1, balance, totalSupply, address }) => {
+        const liquidityPercent = new BigNumber(balance).dividedBy(totalSupply);
+        const pairContract = new web3.eth.Contract(pairAbi, address);
 
         const [assetA, assetB] = await Promise.all(
           [token0, token1].map(async (token) => {
@@ -524,7 +560,7 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
 
         const network = await getNetwork(web3);
 
-        const pairObject = {
+        return {
           assetA: assetA.symbol,
           assetB: assetB.symbol,
           [assetA.symbol]: options.raw
@@ -563,15 +599,11 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
           totalLiquidity: totalSupply,
           liquidityPercent: liquidityPercent.toFixed(),
         };
-
-        pairs = [...pairs, pairObject];
-      }
-    })
+      })
   );
 
-  return pairs;
+  return filteredResults;
 };
-
 export const addLiquidity = async (
   assetA,
   assetAAmount,
