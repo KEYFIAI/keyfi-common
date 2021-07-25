@@ -402,12 +402,6 @@ export const availablePairs = {
       address: "0xB0A539BEA1787813359Fb9AF8e2efD35dd35a744",
     },
     {
-      assetA: "SUSHI",
-      assetB: "USDT",
-      key: "SUSHI:USDT",
-      address: "0xE3FfaB89E53422f468BE955E7011932EfE80aA26",
-    },
-    {
       assetA: "SXP",
       assetB: "USDT",
       key: "SXP:USDT",
@@ -616,12 +610,6 @@ export const availablePairs = {
       assetB: "sUSD",
       key: "USDC:sUSD",
       address: "0x0865b9C7Cd9aa9F0e9F61E96C11e524145b70550",
-    },
-    {
-      assetA: "SUSHI",
-      assetB: "USDC",
-      key: "SUSHI:USDC",
-      address: "0x239650663A422273C0b2c7A1f1a8bdAb69E78D1B",
     },
     {
       assetA: "SXP",
@@ -995,12 +983,7 @@ export const availablePairs = {
       key: "KEY:WETH",
       address: "0xEF9Ac6348A04Ac07C8Cfb19FE19827f1C92d7512",
     },
-    {
-      assetA: "1INCH",
-      assetB: "SUSHI",
-      key: "1INCH:SUSHI",
-      address: "0x8eb3051b6bbcc301800c74ef34a7D5b6b23Aa5F2",
-    },
+
     {
       assetA: "1INCH",
       assetB: "SXP",
@@ -1067,12 +1050,7 @@ export const availablePairs = {
       key: "AMPL:SNX",
       address: "0xf0DBD8D468248a9F01690858a421a437f4b99CE1",
     },
-    {
-      assetA: "AMPL",
-      assetB: "SUSHI",
-      key: "AMPL:SUSHI",
-      address: "0x7fa64A4Be88F9A66401C4a9Cce6B0560e5503f17",
-    },
+
     {
       assetA: "AMPL",
       assetB: "WETH",
@@ -1109,12 +1087,7 @@ export const availablePairs = {
       key: "AXS:SLP",
       address: "0xacBFC935137AC0b6C5cec9A8784349913037381d",
     },
-    {
-      assetA: "AXS",
-      assetB: "SUSHI",
-      key: "AXS:SUSHI",
-      address: "0x3b8c8c021C99546784e3e318FE1bc6Ca4cd31AaA",
-    },
+
     {
       assetA: "AXS",
       assetB: "WETH",
@@ -1594,24 +1567,6 @@ export const availablePairs = {
       assetB: "WETH",
       key: "SUSHI:WETH",
       address: "0xCE84867c3c02B05dc570d0135103d3fB9CC19433",
-    },
-    {
-      assetA: "SUSHI",
-      assetB: "YFI",
-      key: "SUSHI:YFI",
-      address: "0xdEb9725e10642D1dE906923F5b57851aa92a70AA",
-    },
-    {
-      assetA: "SUSHI",
-      assetB: "UNI",
-      key: "SUSHI:UNI",
-      address: "0x6580E58dEd2b562CF5DFA361956f6854F5Cab507",
-    },
-    {
-      assetA: "COMP",
-      assetB: "SUSHI",
-      key: "COMP:SUSHI",
-      address: "0x30526288559f920Ec20d79D9eB147eA330Fe9809",
     },
     {
       assetA: "SXP",

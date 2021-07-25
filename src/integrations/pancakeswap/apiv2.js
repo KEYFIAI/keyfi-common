@@ -178,60 +178,51 @@ export const estimateSwap = async (
     result = await routerContract.methods
       .getAmountsIn(amount, routeAddresses)
       .call();
-
-    const resultFirst = result[0];
-    const resultLast = result[result.length - 1];
-
-    const lastPairAddress = await getPairAddress(
-      web3,
-      routeAddresses[routeAddresses.length - 1],
-      routeAddresses[routeAddresses.length - 2]
-    );
-
-    const pairContract = new web3.eth.Contract(pairAbi, lastPairAddress);
-    const { _reserve1 } = await pairContract.methods.getReserves().call();
-
-    return {
-      priceImpact: (
-        (parseFloat(resultLast) / parseFloat(_reserve1)) *
-        100
-      ).toString(),
-      fromAmount: resultFirst,
-      fromAmountHuman: denormalizeAmount(network, fromAssetSymbol, resultFirst),
-      returnAmount: resultLast,
-      returnAmountHuman: denormalizeAmount(network, toAssetSymbol, resultLast),
-      route,
-    };
   } else {
     amount = normalizeAmount(network, fromAssetSymbol, amount);
     result = await routerContract.methods
       .getAmountsOut(amount, routeAddresses)
       .call();
-
-    const resultFirst = result[0];
-    const resultLast = result[result.length - 1];
-
-    const lastPairAddress = await getPairAddress(
-      web3,
-      routeAddresses[routeAddresses.length - 1],
-      routeAddresses[routeAddresses.length - 2]
-    );
-
-    const pairContract = new web3.eth.Contract(pairAbi, lastPairAddress);
-    const { _reserve1 } = await pairContract.methods.getReserves().call();
-
-    return {
-      priceImpact: (
-        (parseFloat(resultLast) / parseFloat(_reserve1)) *
-        100
-      ).toString(),
-      fromAmount: resultFirst,
-      fromAmountHuman: denormalizeAmount(network, fromAssetSymbol, resultFirst),
-      returnAmount: resultLast,
-      returnAmountHuman: denormalizeAmount(network, toAssetSymbol, resultLast),
-      route,
-    };
   }
+
+  const resultFirst = result[0];
+  const resultLast = result[result.length - 1];
+
+  const lastPairAddress = await getPairAddress(
+    web3,
+    routeAddresses[routeAddresses.length - 1],
+    routeAddresses[routeAddresses.length - 2]
+  );
+
+  const pairContract = new web3.eth.Contract(pairAbi, lastPairAddress);
+
+  const [{ _reserve0, _reserve1 }, token0] = await makeBatchRequest([
+    pairContract.methods.getReserves().call,
+    pairContract.methods.token0().call,
+  ]);
+
+  const lastAddress = web3.utils.toChecksumAddress(
+    routeAddresses[routeAddresses.length - 1]
+  );
+
+  const lastAddressReserve = BigNumber(
+    token0 === lastAddress ? _reserve0 : _reserve1
+  );
+
+  const priceImpact = BigNumber(resultLast)
+    .multipliedBy(0.997)
+    .dividedBy(lastAddressReserve)
+    .multipliedBy(100)
+    .toFixed(3);
+
+  return {
+    priceImpact,
+    fromAmount: resultFirst,
+    fromAmountHuman: denormalizeAmount(network, fromAssetSymbol, resultFirst),
+    returnAmount: resultLast,
+    returnAmountHuman: denormalizeAmount(network, toAssetSymbol, resultLast),
+    route,
+  };
 };
 
 export const swap = async (
@@ -470,140 +461,153 @@ export const getAccountLiquidity = async (
 };
 
 export const getAccountLiquidityAll = async (address = null, options = {}) => {
-  const web3 = await getWeb3();
-
-  if (!(await isSupportedNetwork(web3))) {
-    return [];
-  }
-
-  if (!address) {
-    address = getCurrentAccountAddress(web3);
-  }
-
-  const factoryAddress = await getContractAddress(web3, "Factoryv2");
-  const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
-
-  let pairs = [];
-
   function range(start, end) {
     return Array(end - start + 1)
       .fill()
       .map((_, idx) => start + idx);
   }
 
-  const pairLengthInArray = range(0, 1000);
+  try {
+    const web3 = await getWeb3();
 
-  pairs = await makeBatchRequest(
-    pairLengthInArray.map((pair) => {
-      return factoryContract.methods.allPairs(pair).call;
-    })
-  );
+    if (!(await isSupportedNetwork(web3))) {
+      return [];
+    }
 
-  let batch = new web3.BatchRequest();
-  const promises = [];
+    if (!address) {
+      address = getCurrentAccountAddress(web3);
+    }
 
-  for (const pair of pairs) {
-    const pairContract = new web3.eth.Contract(pairAbi, pair);
-    const [totalSupply, balance, token0, token1] = [
-      promisifyBatchRequest(
-        batch,
-        pairContract.methods.totalSupply().call.request
-      ),
-      promisifyBatchRequest(
-        batch,
-        pairContract.methods.balanceOf(address).call.request
-      ),
-      promisifyBatchRequest(batch, pairContract.methods.token0().call.request),
-      promisifyBatchRequest(batch, pairContract.methods.token1().call.request),
-    ];
+    const factoryAddress = await getContractAddress(web3, "Factoryv2");
+    const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
 
-    const promise = async () => {
-      const [totalSupplyRes, balanceRes, token0Res, token1Res] =
-        await Promise.all([totalSupply, balance, token0, token1]);
-      return {
-        address: pair,
-        totalSupply: totalSupplyRes,
-        balance: balanceRes,
-        token0: token0Res,
-        token1: token1Res,
-      };
-    };
+    const pairLengthInArray = range(0, 500);
 
-    promises.push(promise());
-  }
-
-  batch.execute();
-  const results = await Promise.all(promises);
-  const filteredResults = await Promise.all(
-    results
-      .filter((item) => item.balance !== "0")
-      .map(async ({ token0, token1, balance, totalSupply, address }) => {
-        const liquidityPercent = new BigNumber(balance).dividedBy(totalSupply);
-        const pairContract = new web3.eth.Contract(pairAbi, address);
-
-        const [assetA, assetB] = await Promise.all(
-          [token0, token1].map(async (token) => {
-            const tokenContract = new web3.eth.Contract(pairAbi, token);
-            const symbol = await tokenContract.methods.symbol().call();
-            const decimals = await tokenContract.methods.decimals().call();
-            return {
-              symbol: symbol === "WBNB" ? "BNB" : symbol,
-              decimals,
-            };
-          })
-        );
-        let pairReserves = await pairContract.methods.getReserves().call();
-        pairReserves = {
-          [assetA.symbol]: pairReserves._reserve0,
-          [assetB.symbol]: pairReserves._reserve1,
-        };
-
-        const network = await getNetwork(web3);
-
-        return {
-          assetA: assetA.symbol,
-          assetB: assetB.symbol,
-          [assetA.symbol]: options.raw
-            ? liquidityPercent
-                .multipliedBy(pairReserves[assetA.symbol])
-                .dividedToIntegerBy(1)
-                .toFixed(0)
-            : liquidityPercent
-                .multipliedBy(
-                  denormalizeAmount(
-                    network,
-                    assetA.symbol,
-                    pairReserves[assetA.symbol],
-                    assetB.decimals
-                  )
-                )
-                .toFixed(),
-          [assetB.symbol]: options.raw
-            ? liquidityPercent
-                .multipliedBy(pairReserves[assetB.symbol])
-                .dividedToIntegerBy(1)
-                .toFixed(0)
-            : liquidityPercent
-                .multipliedBy(
-                  denormalizeAmount(
-                    network,
-                    assetB.symbol,
-                    pairReserves[assetB.symbol],
-                    assetB.decimals
-                  )
-                )
-                .toFixed(),
-          liquidity: options.raw
-            ? balance
-            : denormalizeAmount(network, "CAKE-V2", balance),
-          totalLiquidity: totalSupply,
-          liquidityPercent: liquidityPercent.toFixed(),
-        };
+    let pairs = await makeBatchRequest(
+      pairLengthInArray.map((pair) => {
+        return factoryContract.methods.allPairs(pair).call;
       })
-  );
+    );
 
-  return filteredResults;
+    pairs = [...pairs, "0xd10321489BeB6D3a83e09Fa059CF6C8BE5A4C542"];
+
+    let batch = new web3.BatchRequest();
+    const promises = [];
+
+    for (const pair of pairs) {
+      const pairContract = new web3.eth.Contract(pairAbi, pair);
+      const [totalSupply, balance, token0, token1] = [
+        promisifyBatchRequest(
+          batch,
+          pairContract.methods.totalSupply().call.request
+        ),
+        promisifyBatchRequest(
+          batch,
+          pairContract.methods.balanceOf(address).call.request
+        ),
+        promisifyBatchRequest(
+          batch,
+          pairContract.methods.token0().call.request
+        ),
+        promisifyBatchRequest(
+          batch,
+          pairContract.methods.token1().call.request
+        ),
+      ];
+
+      const promise = async () => {
+        const [totalSupplyRes, balanceRes, token0Res, token1Res] =
+          await Promise.all([totalSupply, balance, token0, token1]);
+        return {
+          address: pair,
+          totalSupply: totalSupplyRes,
+          balance: balanceRes,
+          token0: token0Res,
+          token1: token1Res,
+        };
+      };
+
+      promises.push(promise());
+    }
+
+    batch.execute();
+    const results = await Promise.all(promises);
+    const filteredResults = await Promise.all(
+      results
+        .filter((item) => item.balance !== "0")
+        .map(async ({ token0, token1, balance, totalSupply, address }) => {
+          const liquidityPercent = new BigNumber(balance).dividedBy(
+            totalSupply
+          );
+          const pairContract = new web3.eth.Contract(pairAbi, address);
+
+          const [assetA, assetB] = await Promise.all(
+            [token0, token1].map(async (token) => {
+              const tokenContract = new web3.eth.Contract(pairAbi, token);
+              const symbol = await tokenContract.methods.symbol().call();
+              const decimals = await tokenContract.methods.decimals().call();
+              return {
+                symbol: symbol === "WBNB" ? "BNB" : symbol,
+                decimals,
+              };
+            })
+          );
+          let pairReserves = await pairContract.methods.getReserves().call();
+          pairReserves = {
+            [assetA.symbol]: pairReserves._reserve0,
+            [assetB.symbol]: pairReserves._reserve1,
+          };
+
+          const network = await getNetwork(web3);
+
+          return {
+            assetA: assetA.symbol,
+            assetB: assetB.symbol,
+            [assetA.symbol]: options.raw
+              ? liquidityPercent
+                  .multipliedBy(pairReserves[assetA.symbol])
+                  .dividedToIntegerBy(1)
+                  .toFixed(0)
+              : liquidityPercent
+                  .multipliedBy(
+                    denormalizeAmount(
+                      network,
+                      assetA.symbol,
+                      pairReserves[assetA.symbol],
+                      assetB.decimals
+                    )
+                  )
+                  .toFixed(),
+            [assetB.symbol]: options.raw
+              ? liquidityPercent
+                  .multipliedBy(pairReserves[assetB.symbol])
+                  .dividedToIntegerBy(1)
+                  .toFixed(0)
+              : liquidityPercent
+                  .multipliedBy(
+                    denormalizeAmount(
+                      network,
+                      assetB.symbol,
+                      pairReserves[assetB.symbol],
+                      assetB.decimals
+                    )
+                  )
+                  .toFixed(),
+            liquidity: options.raw
+              ? balance
+              : denormalizeAmount(network, "CAKE-V2", balance),
+            totalLiquidity: totalSupply,
+            liquidityPercent: liquidityPercent.toFixed(),
+          };
+        })
+    );
+
+    return filteredResults;
+  } catch (err) {
+    console.log(err);
+  }
 };
+
 export const addLiquidity = async (
   assetA,
   assetAAmount,

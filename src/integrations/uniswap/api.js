@@ -183,28 +183,69 @@ const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
 
 export const estimateSwap = async (
   fromAssetSymbol,
-  fromAmount,
-  toAssetSymbol
+  amount,
+  toAssetSymbol,
+  reverse = false
 ) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
-  fromAmount = normalizeAmount(network, fromAssetSymbol, fromAmount);
 
   const routerAddress = await getContractAddress(web3, "Router02");
   const routerContract = new web3.eth.Contract(routerAbi, routerAddress);
 
   const route = await findRoute(fromAssetSymbol, toAssetSymbol);
   const routeAddresses = await Promise.all(
-    route.map((assetSymbol) => getAssetAddress(web3, assetSymbol))
+    route.map((symbol) => getAssetAddress(web3, symbol))
   );
 
-  const result = await routerContract.methods
-    .getAmountsOut(fromAmount, routeAddresses)
-    .call();
+  let result;
 
+  if (reverse) {
+    amount = normalizeAmount(network, toAssetSymbol, amount);
+    result = await routerContract.methods
+      .getAmountsIn(amount, routeAddresses)
+      .call();
+  } else {
+    amount = normalizeAmount(network, fromAssetSymbol, amount);
+    result = await routerContract.methods
+      .getAmountsOut(amount, routeAddresses)
+      .call();
+  }
+
+  const resultFirst = result[0];
   const resultLast = result[result.length - 1];
 
+  const lastPairAddress = await getPairAddress(
+    web3,
+    routeAddresses[routeAddresses.length - 1],
+    routeAddresses[routeAddresses.length - 2]
+  );
+
+  const pairContract = new web3.eth.Contract(pairAbi, lastPairAddress);
+
+  const [{ _reserve0, _reserve1 }, token0] = await makeBatchRequest([
+    pairContract.methods.getReserves().call,
+    pairContract.methods.token0().call,
+  ]);
+
+  const lastAddress = web3.utils.toChecksumAddress(
+    routeAddresses[routeAddresses.length - 1]
+  );
+
+  const lastAddressReserve = BigNumber(
+    token0 === lastAddress ? _reserve0 : _reserve1
+  );
+
+  const priceImpact = BigNumber(resultLast)
+    .multipliedBy(0.997)
+    .dividedBy(lastAddressReserve)
+    .multipliedBy(100)
+    .toFixed(3);
+
   return {
+    priceImpact,
+    fromAmount: resultFirst,
+    fromAmountHuman: denormalizeAmount(network, fromAssetSymbol, resultFirst),
     returnAmount: resultLast,
     returnAmountHuman: denormalizeAmount(network, toAssetSymbol, resultLast),
     route,
