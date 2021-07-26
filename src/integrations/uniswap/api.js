@@ -490,108 +490,109 @@ export const getAccountLiquidity = async (
 };
 
 export const getAccountLiquidityAll = async (address = null, options = {}) => {
-  const web3 = await getWeb3();
+  try {
+    const web3 = await getWeb3();
 
-  if (!(await isSupportedNetwork(web3))) {
-    return [];
-  }
+    if (!(await isSupportedNetwork(web3))) {
+      return [];
+    }
 
-  if (!address) {
-    address = getCurrentAccountAddress(web3);
-  }
+    if (!address) {
+      address = getCurrentAccountAddress(web3);
+    }
 
-  // const factoryAddress = await getContractAddress(web3, "Factory");
-  // const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
-  // const pairsLength = await factoryContract.methods.allPairsLength().call();
+    let pairs = [];
 
-  // const pairLengthInArray = [...Array(Number(pairsLength)).keys()];
+    await Promise.all(
+      availablePairs.mainnet.map(async (pair) => {
+        const pairId = pair.address;
 
-  let pairs = [];
+        const pairContract = new web3.eth.Contract(pairAbi, pairId);
 
-  await Promise.all(
-    availablePairs.mainnet.map(async (pair) => {
-      const pairId = pair.address;
-
-      const pairContract = new web3.eth.Contract(pairAbi, pairId);
-
-      const [totalSupply, balance] = await makeBatchRequest([
-        pairContract.methods.totalSupply().call,
-        pairContract.methods.balanceOf(address).call,
-      ]);
-
-      if (balance !== "0") {
-        const liquidityPercent = new BigNumber(balance).dividedBy(totalSupply);
-        const [token0, token1] = await makeBatchRequest([
-          pairContract.methods.token0().call,
-          pairContract.methods.token1().call,
+        const [totalSupply, balance] = await makeBatchRequest([
+          pairContract.methods.totalSupply().call,
+          pairContract.methods.balanceOf(address).call,
         ]);
 
-        const [assetA, assetB] = await Promise.all(
-          [token0, token1].map(async (token) => {
-            const tokenContract = new web3.eth.Contract(pairAbi, token);
-            const [symbol, decimals] = await makeBatchRequest([
-              tokenContract.methods.symbol().call,
-              tokenContract.methods.decimals().call,
-            ]);
-            return {
-              symbol: symbol === "WETH" ? "ETH" : symbol,
-              decimals,
-            };
-          })
-        );
-        let pairReserves = await pairContract.methods.getReserves().call();
-        pairReserves = {
-          [assetA.symbol]: pairReserves._reserve0,
-          [assetB.symbol]: pairReserves._reserve1,
-        };
+        if (balance !== "0") {
+          const liquidityPercent = new BigNumber(balance).dividedBy(
+            totalSupply
+          );
+          const [token0, token1] = await makeBatchRequest([
+            pairContract.methods.token0().call,
+            pairContract.methods.token1().call,
+          ]);
 
-        const network = await getNetwork(web3);
+          const [assetA, assetB] = await Promise.all(
+            [token0, token1].map(async (token) => {
+              const tokenContract = new web3.eth.Contract(pairAbi, token);
+              const [symbol, decimals] = await makeBatchRequest([
+                tokenContract.methods.symbol().call,
+                tokenContract.methods.decimals().call,
+              ]);
+              return {
+                symbol: symbol === "WETH" ? "ETH" : symbol,
+                decimals,
+              };
+            })
+          );
+          let pairReserves = await pairContract.methods.getReserves().call();
+          pairReserves = {
+            [assetA.symbol]: pairReserves._reserve0,
+            [assetB.symbol]: pairReserves._reserve1,
+          };
 
-        const pairObject = {
-          assetA: assetA.symbol,
-          assetB: assetB.symbol,
-          [assetA.symbol]: options.raw
-            ? liquidityPercent
-                .multipliedBy(pairReserves[assetA.symbol])
-                .dividedToIntegerBy(1)
-                .toFixed(0)
-            : liquidityPercent
-                .multipliedBy(
-                  denormalizeAmount(
-                    network,
-                    assetA.symbol,
-                    pairReserves[assetA.symbol],
-                    assetB.decimals
+          const network = await getNetwork(web3);
+
+          const pairObject = {
+            assetA: assetA.symbol,
+            assetB: assetB.symbol,
+            [assetA.symbol]: options.raw
+              ? liquidityPercent
+                  .multipliedBy(pairReserves[assetA.symbol])
+                  .dividedToIntegerBy(1)
+                  .toFixed(0)
+              : liquidityPercent
+                  .multipliedBy(
+                    denormalizeAmount(
+                      network,
+                      assetA.symbol,
+                      pairReserves[assetA.symbol],
+                      assetB.decimals
+                    )
                   )
-                )
-                .toFixed(),
-          [assetB.symbol]: options.raw
-            ? liquidityPercent
-                .multipliedBy(pairReserves[assetB.symbol])
-                .dividedToIntegerBy(1)
-                .toFixed(0)
-            : liquidityPercent
-                .multipliedBy(
-                  denormalizeAmount(
-                    network,
-                    assetB.symbol,
-                    pairReserves[assetB.symbol],
-                    assetB.decimals
+                  .toFixed(),
+            [assetB.symbol]: options.raw
+              ? liquidityPercent
+                  .multipliedBy(pairReserves[assetB.symbol])
+                  .dividedToIntegerBy(1)
+                  .toFixed(0)
+              : liquidityPercent
+                  .multipliedBy(
+                    denormalizeAmount(
+                      network,
+                      assetB.symbol,
+                      pairReserves[assetB.symbol],
+                      assetB.decimals
+                    )
                   )
-                )
-                .toFixed(),
-          liquidity: options.raw
-            ? balance
-            : denormalizeAmount(network, "UNI-V2", balance),
-          totalLiquidity: totalSupply,
-          liquidityPercent: liquidityPercent.toFixed(),
-        };
-        return pairs.push(pairObject);
-      }
-    })
-  );
+                  .toFixed(),
+            liquidity: options.raw
+              ? balance
+              : denormalizeAmount(network, "UNI-V2", balance),
+            totalLiquidity: totalSupply,
+            liquidityPercent: liquidityPercent.toFixed(),
+          };
+          return pairs.push(pairObject);
+        }
+      })
+    );
 
-  return pairs;
+    return pairs;
+  } catch (err) {
+    console.log(err);
+    return [];
+  }
 };
 
 export const addLiquidity = async (

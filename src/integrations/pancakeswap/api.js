@@ -592,7 +592,7 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
     return filteredResults;
   } catch (err) {
     console.log(err);
-    return err;
+    return [];
   }
 };
 
