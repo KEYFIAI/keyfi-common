@@ -215,32 +215,34 @@ export const estimateSwap = async (
   const resultFirst = result[0];
   const resultLast = result[result.length - 1];
 
-  const lastPairAddress = await getPairAddress(
-    web3,
-    routeAddresses[routeAddresses.length - 1],
-    routeAddresses[routeAddresses.length - 2]
+  const priceImpacts = await Promise.all(
+    routeAddresses.map(async (address, i) => {
+      const nextAddress = routeAddresses[i + 1];
+      if (!nextAddress) {
+        return 0;
+      }
+      const pairAddress = await getPairAddress(web3, address, nextAddress);
+      const pairContract2 = new web3.eth.Contract(pairAbi, pairAddress);
+      const [{ _reserve0, _reserve1 }, token0] = await makeBatchRequest([
+        pairContract2.methods.getReserves().call,
+        pairContract2.methods.token0().call,
+      ]);
+      const lastAddress = web3.utils.toChecksumAddress(nextAddress);
+      const lastAddressReserve = BigNumber(
+        token0 === lastAddress ? _reserve0 : _reserve1
+      );
+
+      return BigNumber(result[i + 1])
+        .multipliedBy(0.997)
+        .dividedBy(lastAddressReserve)
+        .multipliedBy(100)
+        .toFixed(3);
+    })
   );
 
-  const pairContract = new web3.eth.Contract(pairAbi, lastPairAddress);
-
-  const [{ _reserve0, _reserve1 }, token0] = await makeBatchRequest([
-    pairContract.methods.getReserves().call,
-    pairContract.methods.token0().call,
-  ]);
-
-  const lastAddress = web3.utils.toChecksumAddress(
-    routeAddresses[routeAddresses.length - 1]
-  );
-
-  const lastAddressReserve = BigNumber(
-    token0 === lastAddress ? _reserve0 : _reserve1
-  );
-
-  const priceImpact = BigNumber(resultLast)
-    .multipliedBy(0.997)
-    .dividedBy(lastAddressReserve)
-    .multipliedBy(100)
-    .toFixed(3);
+  const priceImpact = priceImpacts.reduce((acc, impact) => {
+    return acc + parseFloat(impact);
+  }, 0);
 
   return {
     priceImpact,

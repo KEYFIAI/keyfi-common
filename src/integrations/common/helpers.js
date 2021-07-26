@@ -30,3 +30,14 @@ export const makeBatchRequest = async (calls) => {
 
   return Promise.all(promises);
 };
+
+/**
+ * Creates an array with numbers from start to end. Example - [0,1,2]
+ * @param {number} start Start number.
+ * @param {number} end End number.
+ */
+export const range = (start, end) => {
+  return Array(end - start + 1)
+    .fill()
+    .map((_, idx) => start + idx);
+};

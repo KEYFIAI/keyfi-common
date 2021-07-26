@@ -64,7 +64,6 @@ const supportedPairs = [
       symbol: "BUSD",
     },
   },
-
   {
     id: "0xa527a61703d82139f8a06bc30097cc9caa2df5a6",
     token0: {

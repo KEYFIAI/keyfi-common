@@ -188,32 +188,34 @@ export const estimateSwap = async (
   const resultFirst = result[0];
   const resultLast = result[result.length - 1];
 
-  const lastPairAddress = await getPairAddress(
-    web3,
-    routeAddresses[routeAddresses.length - 1],
-    routeAddresses[routeAddresses.length - 2]
+  const priceImpacts = await Promise.all(
+    routeAddresses.map(async (address, i) => {
+      const nextAddress = routeAddresses[i + 1];
+      if (!nextAddress) {
+        return 0;
+      }
+      const pairAddress = await getPairAddress(web3, address, nextAddress);
+      const pairContract2 = new web3.eth.Contract(pairAbi, pairAddress);
+      const [{ _reserve0, _reserve1 }, token0] = await makeBatchRequest([
+        pairContract2.methods.getReserves().call,
+        pairContract2.methods.token0().call,
+      ]);
+      const lastAddress = web3.utils.toChecksumAddress(nextAddress);
+      const lastAddressReserve = BigNumber(
+        token0 === lastAddress ? _reserve0 : _reserve1
+      );
+
+      return BigNumber(result[i + 1])
+        .multipliedBy(0.998)
+        .dividedBy(lastAddressReserve)
+        .multipliedBy(100)
+        .toFixed(3);
+    })
   );
 
-  const pairContract = new web3.eth.Contract(pairAbi, lastPairAddress);
-
-  const [{ _reserve0, _reserve1 }, token0] = await makeBatchRequest([
-    pairContract.methods.getReserves().call,
-    pairContract.methods.token0().call,
-  ]);
-
-  const lastAddress = web3.utils.toChecksumAddress(
-    routeAddresses[routeAddresses.length - 1]
-  );
-
-  const lastAddressReserve = BigNumber(
-    token0 === lastAddress ? _reserve0 : _reserve1
-  );
-
-  const priceImpact = BigNumber(resultLast)
-    .multipliedBy(0.997)
-    .dividedBy(lastAddressReserve)
-    .multipliedBy(100)
-    .toFixed(3);
+  const priceImpact = priceImpacts.reduce((acc, impact) => {
+    return acc + parseFloat(impact);
+  }, 0);
 
   return {
     priceImpact,
@@ -461,12 +463,6 @@ export const getAccountLiquidity = async (
 };
 
 export const getAccountLiquidityAll = async (address = null, options = {}) => {
-  function range(start, end) {
-    return Array(end - start + 1)
-      .fill()
-      .map((_, idx) => start + idx);
-  }
-
   try {
     const web3 = await getWeb3();
 
@@ -478,23 +474,10 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
       address = getCurrentAccountAddress(web3);
     }
 
-    const factoryAddress = await getContractAddress(web3, "Factoryv2");
-    const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
-
-    const pairLengthInArray = range(0, 500);
-
-    let pairs = await makeBatchRequest(
-      pairLengthInArray.map((pair) => {
-        return factoryContract.methods.allPairs(pair).call;
-      })
-    );
-
-    pairs = [...pairs, "0xd10321489BeB6D3a83e09Fa059CF6C8BE5A4C542"];
-
     let batch = new web3.BatchRequest();
     const promises = [];
 
-    for (const pair of pairs) {
+    for (const { id: pair } of supportedPairsv2) {
       const pairContract = new web3.eth.Contract(pairAbi, pair);
       const [totalSupply, balance, token0, token1] = [
         promisifyBatchRequest(
@@ -605,6 +588,7 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
     return filteredResults;
   } catch (err) {
     console.log(err);
+    return err;
   }
 };
 
