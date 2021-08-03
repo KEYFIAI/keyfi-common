@@ -1,6 +1,10 @@
 import LendingPoolAbi from "./abi/LendingPool.abi.json";
 import ATokenAbi from "./abi/AToken.abi.json";
-import { getContractAddress, getReserves, isSupportedNetwork } from "./address";
+import {
+  getContractAddress,
+  getReserves,
+  isSupportedNetwork,
+} from "./constants/address";
 import {
   approveErc20IfNeeded,
   denormalizeAmount,

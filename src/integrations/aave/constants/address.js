@@ -1,6 +1,6 @@
-import LendingPoolAddressesProviderABI from "./abi/LendingPoolAddressesProvider.abi.json";
-import LendingPoolAbi from "./abi/LendingPool.abi.json";
-import { getNetwork, processWeb3OrNetworkArgument } from "../common";
+import LendingPoolAddressesProviderABI from "../abi/LendingPoolAddressesProvider.abi.json";
+import LendingPoolAbi from "../abi/LendingPool.abi.json";
+import { getNetwork, processWeb3OrNetworkArgument } from "../../common";
 
 const mainnet = 1;
 const ropsten = 3;
@@ -94,8 +94,10 @@ export const isSupportedNetwork = async (web3OrNetwork) => {
 export const getContractAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
 
-  if (!await isSupportedNetwork(network)) {
-    throw new Error(`Network with chainId=${network.chainId} is not supported!`);
+  if (!(await isSupportedNetwork(network))) {
+    throw new Error(
+      `Network with chainId=${network.chainId} is not supported!`
+    );
   }
 
   if (contractName === "ETH") {
