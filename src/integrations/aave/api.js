@@ -275,7 +275,7 @@ export async function repay(asset, amount, options = {}) {
 export async function getUserReserveData(asset) {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
-  const assetAddress = await this.getAddress(asset);
+  const assetAddress = await getAddress(asset);
   const address = await getCurrentAccountAddress(web3);
 
   const lp = await getLendingPoolContract(web3);
@@ -304,6 +304,91 @@ export async function getUserReserveData(asset) {
     ),
   };
 }
+
+export const getBorrowAssets = async () => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const reserves = await getReserves(web3);
+
+  if (!(await isSupportedNetwork(network))) {
+    return {};
+  }
+
+  const lp = await getLendingPoolContract(web3);
+
+  const borrowAssets = [];
+  const batch = new web3.BatchRequest();
+
+  const promises = Object.entries(reserves).map(
+    ([reserveSymbol, reserveAddress]) => {
+      const p = promisifyBatchRequest(
+        batch,
+        lp.methods.getReserveData(reserveAddress).call.request
+      );
+      return p.then((result) => {
+        borrowAssets.push({
+          symbol: reserveSymbol,
+          variableAPY: denormalizeAmount(
+            network,
+            reserveSymbol,
+            result.variableBorrowRate,
+            27
+          ),
+          stableAPY: denormalizeAmount(
+            network,
+            reserveSymbol,
+            result.variableBorrowRate,
+            27
+          ),
+        });
+      });
+    }
+  );
+
+  batch.execute();
+  await Promise.all(promises);
+
+  return borrowAssets;
+};
+
+export const getBorrowedBalance = async (address = null) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+  const reserves = await getReserves(web3);
+
+  if (!(await isSupportedNetwork(network))) {
+    return {};
+  }
+
+  if (!address) {
+    address = getCurrentAccountAddress(web3);
+  }
+
+  const lp = await getLendingPoolContract(web3);
+
+  const borrowBalance = {};
+  const batch = new web3.BatchRequest();
+
+  const promises = Object.entries(reserves).map(
+    ([reserveSymbol, reserveAddress]) => {
+      const p = promisifyBatchRequest(
+        batch,
+        lp.methods.getUserReserveData(reserveAddress, address).call.request
+      );
+      return p.then((result) => {
+        borrowBalance[reserveSymbol] = denormalizeAmount(
+          network,
+          reserveSymbol,
+          result.currentBorrowBalance
+        );
+      });
+    }
+  );
+  batch.execute();
+  await Promise.all(promises);
+
+  return borrowBalance;
+};
 
 export async function getBalance(address = null) {
   const web3 = await getWeb3();

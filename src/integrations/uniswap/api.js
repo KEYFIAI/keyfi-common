@@ -6,7 +6,7 @@ import {
   uniswapContracts,
   PAIR_NOT_EXISTS,
   NULL_ADDRESS,
-} from "./constants";
+} from "./constants/constants";
 import factoryAbi from "./abi/factory.abi.json";
 import routerAbi from "./abi/router02.abi.json";
 import pairAbi from "./abi/pair.abi.json";

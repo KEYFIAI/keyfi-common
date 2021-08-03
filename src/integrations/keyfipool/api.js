@@ -23,7 +23,7 @@ export const isSupportedNetwork = async (web3OrNetwork) => {
   return Boolean(contractAddresses[network.name]);
 };
 
-const getContractAddress = async (web3, contractName) => {
+export const getContractAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
 
   if (!(await isSupportedNetwork(network))) {
