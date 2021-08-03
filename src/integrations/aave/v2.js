@@ -78,7 +78,8 @@ export async function deposit(asset, amount, options = {}) {
       .depositETH(lpAddress, userAddress, referralCode)
       .send(
         {
-          from: getCurrentAccountAddress(web3),
+          from: userAddress,
+          sender: userAddress,
           value: nAmount,
           gas: GAS_LIMIT,
           ...trxOverrides,
@@ -279,6 +280,8 @@ export const getUserAccountData = async (address = null) => {
 
   const lp = await getLendingPoolContract(web3);
   const user = await lp.methods.getUserAccountData(address).call();
+
+  console.log(user);
 
   return {
     availableBorrowsETH: denormalizeAmount(
