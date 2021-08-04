@@ -6,6 +6,7 @@ export const addresses = {
     ProtocolData: "0x057835Ad21a177dbdd3090bB1CAE03EaCF78Fc6d",
     LendingPoolAddressesProvider: "0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5",
     WETHGateway: "0x057835Ad21a177dbdd3090bB1CAE03EaCF78Fc6d",
+    PriceOracle: "0xA50ba011c48153De246E5192C8f9258A2ba79Ca9",
     reserves: {
       USDT: {
         aTokenAddress: "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811",

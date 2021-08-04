@@ -19,6 +19,7 @@ import {
 import LendingPoolABI from "./abi/LendingPoolv2.abi.json";
 import ProtocolDataABI from "./abi/ProtocolDataProviderv2.abi.json";
 import WETHGatewayABI from "./abi/WETHGatewayv2.abi.json";
+import PriceOracleABI from "./abi/PriceOraclev2.abi.json";
 
 const GAS_LIMIT = 750000;
 const PENDING_CALLBACK_PLATFORM = "aave";
@@ -35,6 +36,7 @@ export const getProtocolDataContract = async (web3) => {
 
 export const getWETHGatewayContract = async (web3) => {
   const WETHGatewayAddress = await getContractAddress("WETHGateway");
+  console.log(WETHGatewayAddress);
   return new web3.eth.Contract(WETHGatewayABI, WETHGatewayAddress);
 };
 
@@ -74,27 +76,16 @@ export async function deposit(asset, amount, options = {}) {
     // Gas cost on Ropsten: 230000+
     const gateway = await getWETHGatewayContract(web3);
 
+    console.log(lpAddress, userAddress);
+
     return gateway.methods
       .depositETH(lpAddress, userAddress, referralCode)
-      .send(
-        {
-          from: userAddress,
-          sender: userAddress,
-          value: nAmount,
-          gas: GAS_LIMIT,
-          ...trxOverrides,
-        },
-        getPendingTrxCallback(options.pendingCallback, {
-          platform: PENDING_CALLBACK_PLATFORM,
-          type: "deposit",
-          assets: [
-            {
-              symbol: asset,
-              amount: amount,
-            },
-          ],
-        })
-      );
+      .send({
+        from: userAddress,
+        value: nAmount,
+        gas: GAS_LIMIT,
+        ...trxOverrides,
+      });
   } else {
     await approveErc20IfNeeded(
       web3,
@@ -186,7 +177,17 @@ export const getBorrowAssets = async () => {
   batch.execute();
   await Promise.all(promises);
 
-  return borrowAssets;
+  const priceOracleAddress = await getContractAddress("PriceOracle");
+  const priceOracle = new web3.eth.Contract(PriceOracleABI, priceOracleAddress);
+
+  const prices = await priceOracle.methods
+    .getAssetsPrices(Object.values(reserves).map((item) => item.address))
+    .call();
+
+  return borrowAssets.map((item, i) => ({
+    ...item,
+    priceETH: denormalizeAmount(network, "ETH", prices[i]),
+  }));
 };
 
 export const getBorrowedBalance = async (address = null) => {
@@ -281,8 +282,6 @@ export const getUserAccountData = async (address = null) => {
   const lp = await getLendingPoolContract(web3);
   const user = await lp.methods.getUserAccountData(address).call();
 
-  console.log(user);
-
   return {
     availableBorrowsETH: denormalizeAmount(
       network,
@@ -304,7 +303,6 @@ export const getUserAccountData = async (address = null) => {
 export const getAllReservesTokens = async (address = null) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
-  const reserves = await getReserves(web3);
 
   if (!(await isSupportedNetwork(network))) {
     return {};
