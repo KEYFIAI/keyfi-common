@@ -14,7 +14,7 @@ import {
 } from "../common";
 import { getAccountLiquidity } from "../uniswap";
 import { getAccountLiquidity as getAccountLiquidityBSC } from "../pancakeswap";
-import v2 from "../pancakeswap";
+import { v2 } from "../pancakeswap";
 
 const GAS_LIMIT = 250000;
 const PENDING_CALLBACK_PLATFORM = "keyfi rewardpool";
@@ -104,7 +104,7 @@ export const getStaked = async (accountAddress, onlyForLP = false) => {
     if (onlyForLP) {
       balance = {
         KEYFIBUSD_LP: balance["KEYFIBUSD_LP"],
-        KEYFIBUSDv2LP: balance["KEYFIBUSDv2LP"],
+        KEYFIBUSDLPv2: balance["KEYFIBUSDLPv2"],
       };
     }
     if (BigNumber(balance.KEYFIBUSD_LP).gt(0)) {
@@ -122,12 +122,12 @@ export const getStaked = async (accountAddress, onlyForLP = false) => {
         .plus(pair.BUSD)
         .toFixed();
     }
-    if (BigNumber(balance.KEYFIBUSDv2LP).gt(0)) {
-      const pairBalance = balance.KEYFIBUSDv2LP;
-      delete balance["KEYFIBUSDv2LP"];
+    if (BigNumber(balance.KEYFIBUSDLPv2).gt(0)) {
+      const pairBalance = balance.KEYFIBUSDLPv2;
+      delete balance["KEYFIBUSDLPv2"];
 
       const pair = await v2.getAccountLiquidity("BUSD", "KEYFI", null, {
-        balance: normalizeAmount(network, "KEYFIBUSDv2LP", pairBalance),
+        balance: normalizeAmount(network, "KEYFIBUSDLPv2", pairBalance),
       });
 
       balance.KEYFI = BigNumber(balance.KEYFI ? balance.KEYFI : 0)
