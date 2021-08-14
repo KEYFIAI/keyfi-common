@@ -1,5 +1,6 @@
 import LendingPoolAbi from "./abi/LendingPool.abi.json";
 import ATokenAbi from "./abi/AToken.abi.json";
+import PriceOracleABI from "./abi/PriceOraclev2.abi.json";
 import {
   getContractAddress,
   getReserves,
@@ -15,6 +16,8 @@ import {
   normalizeAmount,
   promisifyBatchRequest,
 } from "../common";
+import BigNumber from "bignumber.js";
+import axios from "axios";
 
 const GAS_LIMIT = 750000;
 const PENDING_CALLBACK_PLATFORM = "aave";
@@ -312,11 +315,12 @@ export async function getUserReserveData(asset) {
 export const getBorrowAssets = async () => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
-  const reserves = await getReserves(web3);
 
   if (!(await isSupportedNetwork(network))) {
     return {};
   }
+
+  const reserves = await getReserves(web3);
 
   const lp = await getLendingPoolContract(web3);
 
@@ -331,7 +335,25 @@ export const getBorrowAssets = async () => {
       );
       return p.then((result) => {
         borrowAssets.push({
+          address: reserveAddress,
           symbol: reserveSymbol,
+          totalStableDebt: "0",
+          stableBorrowRateEnabled: false,
+          totalVariableDebt: denormalizeAmount(
+            network,
+            reserveSymbol,
+            result.totalBorrowsVariable
+          ),
+          totalDebt: denormalizeAmount(
+            network,
+            reserveSymbol,
+            BigNumber(result.totalBorrowsVariable)
+          ),
+          availableLiquidity: denormalizeAmount(
+            network,
+            reserveSymbol,
+            result.availableLiquidity
+          ),
           variableAPY: denormalizeAmount(
             network,
             reserveSymbol,
@@ -341,7 +363,7 @@ export const getBorrowAssets = async () => {
           stableAPY: denormalizeAmount(
             network,
             reserveSymbol,
-            result.variableBorrowRate,
+            result.stableBorrowRate,
             27
           ),
         });
@@ -352,17 +374,109 @@ export const getBorrowAssets = async () => {
   batch.execute();
   await Promise.all(promises);
 
-  return borrowAssets;
+  const priceOracleAddress = await getContractAddress(web3, "PriceOracle");
+  const priceOracle = new web3.eth.Contract(PriceOracleABI, priceOracleAddress);
+
+  const prices = await priceOracle.methods
+    .getAssetsPrices(Object.values(reserves).map((item) => item))
+    .call();
+
+  return borrowAssets.map((item, i) => ({
+    ...item,
+    priceETH:
+      item.symbol === "ETH"
+        ? "1"
+        : denormalizeAmount(network, "ETH", prices[i]),
+  }));
+};
+
+export const getAssetHistoricalAPY = async (asset) => {
+  const web3 = await getWeb3();
+
+  if (!asset) {
+    throw new Error("Missing asset");
+  }
+  const assetAddress = await getContractAddress(web3, asset);
+  const lpProviderAddress = await getContractAddress(
+    web3,
+    "LendingPoolAddressesProvider"
+  );
+
+  const todayMinus1month =
+    new Date(
+      new Date().getFullYear(),
+      new Date().getMonth() - 1,
+      new Date().getDate()
+    ) / 1000;
+
+  const fetchHistoricalAPY = async (step, id) => {
+    const res = await axios.post(
+      "https://api.thegraph.com/subgraphs/name/aave/protocol-multy-raw",
+      {
+        query: `query myQuery($id: ID!){
+          reserve(id: $id) {
+            symbol
+            paramsHistory(first: 1000, ${
+              step !== 1 ? `skip: ${(step - 1) * 1000},` : ""
+            } orderDirection: desc, orderBy: timestamp, where: {timestamp_gt:${todayMinus1month}}) {
+              variableBorrowRate
+              stableBorrowRate
+              timestamp
+            }
+          }
+        }`,
+        variables: {
+          id,
+        },
+      }
+    );
+
+    let paramsHistory = res.data.errors
+      ? []
+      : res.data.data.reserve.paramsHistory;
+
+    if (
+      paramsHistory.length !== 0 &&
+      paramsHistory[paramsHistory.length - 1].timestamp > todayMinus1month
+    ) {
+      const data2 = await fetchHistoricalAPY(step + 1, id);
+      paramsHistory = [...paramsHistory, ...data2];
+    }
+
+    return paramsHistory;
+  };
+
+  try {
+    const idAddress =
+      assetAddress.toLowerCase() + lpProviderAddress.toLowerCase();
+
+    const data = await fetchHistoricalAPY(1, idAddress);
+
+    return data.reverse().map((item) => ({
+      ...item,
+      variableBorrowRate: BigNumber(item.variableBorrowRate)
+        .shiftedBy(-27)
+        .times(100)
+        .toFixed(),
+      stableBorrowRate: BigNumber(item.stableBorrowRate)
+        .shiftedBy(-27)
+        .times(100)
+        .toFixed(),
+    }));
+  } catch (err) {
+    return err;
+  }
 };
 
 export const getBorrowedBalance = async (address = null) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
-  const reserves = await getReserves(web3);
 
   if (!(await isSupportedNetwork(network))) {
     return {};
   }
+
+  const reserves = await getReserves(web3);
 
   if (!address) {
     address = getCurrentAccountAddress(web3);
@@ -379,12 +493,16 @@ export const getBorrowedBalance = async (address = null) => {
         batch,
         lp.methods.getUserReserveData(reserveAddress, address).call.request
       );
+
       return p.then((result) => {
-        borrowBalance[reserveSymbol] = denormalizeAmount(
-          network,
-          reserveSymbol,
-          result.currentBorrowBalance
-        );
+        borrowBalance[reserveSymbol] = {
+          ...result,
+          totalDebt: denormalizeAmount(
+            network,
+            reserveSymbol,
+            result.currentBorrowBalance
+          ),
+        };
       });
     }
   );

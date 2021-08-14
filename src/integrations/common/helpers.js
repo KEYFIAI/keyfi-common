@@ -13,8 +13,10 @@ export const processWeb3OrNetworkArgument = async (web3OrNetwork) => {
   return getNetwork(web3OrNetwork);
 };
 
-export const makeBatchRequest = async (calls) => {
-  const web3 = await getWeb3();
+export const makeBatchRequest = async (calls, web3) => {
+  if (!web3) {
+    web3 = await getWeb3();
+  }
   let batch = new web3.BatchRequest();
 
   let promises = calls.map((call) => {

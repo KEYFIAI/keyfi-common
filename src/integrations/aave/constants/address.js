@@ -9,6 +9,7 @@ const ethAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const addresses = {
   [mainnet]: {
     LendingPoolAddressesProvider: "0x24a42fD28C976A61Df5D00D0599C34c4f90748c8",
+    PriceOracle: "0xA50ba011c48153De246E5192C8f9258A2ba79Ca9",
     reserves: {
       ETH: ethAddress,
       AAVE: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
