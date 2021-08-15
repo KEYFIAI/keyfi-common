@@ -1,30 +1,45 @@
-import LendingPoolAbi from "./abi/LendingPool.abi.json";
-import ATokenAbi from "./abi/AToken.abi.json";
-import PriceOracleABI from "./abi/PriceOraclev2.abi.json";
-import {
-  getContractAddress,
-  getReserves,
-  isSupportedNetwork,
-} from "./constants/address";
+import BigNumber from "bignumber.js";
 import {
   approveErc20IfNeeded,
   denormalizeAmount,
   getCurrentAccountAddress,
-  getPendingTrxCallback,
   getNetwork,
+  getPendingTrxCallback,
   getWeb3,
+  makeBatchRequest,
   normalizeAmount,
   promisifyBatchRequest,
 } from "../common";
-import BigNumber from "bignumber.js";
+import {
+  fetchContractDynamicAddress,
+  getContractAddress,
+  getReserveAddress,
+  getReserves,
+  isSupportedNetwork,
+} from "./constants/constantsv2";
+
+import LendingPoolABI from "./abi/LendingPoolv2.abi.json";
+import ProtocolDataABI from "./abi/ProtocolDataProviderv2.abi.json";
+import WETHGatewayABI from "./abi/WETHGatewayv2.abi.json";
+import PriceOracleABI from "./abi/PriceOraclev2.abi.json";
 import axios from "axios";
 
 const GAS_LIMIT = 750000;
 const PENDING_CALLBACK_PLATFORM = "aave";
 
 export const getLendingPoolContract = async (web3) => {
-  const lpAddress = await getContractAddress(web3, "LendingPool");
-  return new web3.eth.Contract(LendingPoolAbi, lpAddress);
+  const lpAddress = await fetchContractDynamicAddress(web3, "LendingPool");
+  return new web3.eth.Contract(LendingPoolABI, lpAddress);
+};
+
+export const getProtocolDataContract = async (web3) => {
+  const lpAddress = await getContractAddress("ProtocolData");
+  return new web3.eth.Contract(ProtocolDataABI, lpAddress);
+};
+
+export const getWETHGatewayContract = async (web3) => {
+  const WETHGatewayAddress = await getContractAddress("WETHGateway");
+  return new web3.eth.Contract(WETHGatewayABI, WETHGatewayAddress);
 };
 
 const getTrxOverrides = async (options) => {
@@ -34,9 +49,9 @@ const getTrxOverrides = async (options) => {
   };
 };
 
-export async function getAddress(contractName) {
-  return getContractAddress(await getWeb3(), contractName);
-}
+export const getAddress = (asset) => {
+  return getReserveAddress(asset);
+};
 
 export const getSupportedAssets = async () => {
   const web3 = await getWeb3();
@@ -44,46 +59,50 @@ export const getSupportedAssets = async () => {
 };
 
 export async function deposit(asset, amount, options = {}) {
-  const referralCode = options.referralCode || "0";
+  const referralCode = "0";
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
 
-  const assetAddress = await this.getAddress(asset);
+  const assetAddress = await getAddress(asset);
   if (!assetAddress) {
     throw new Error(`Asset is not supported: '${asset}'`);
   }
 
   const lp = await getLendingPoolContract(web3);
   const trxOverrides = getTrxOverrides(options);
+  const userAddress = getCurrentAccountAddress(web3);
+  const lpAddress = await getContractAddress("LendingPool", web3);
 
   if (asset === "ETH") {
     // Gas cost on Ropsten: 230000+
-    return lp.methods.deposit(assetAddress, nAmount, referralCode).send(
-      {
-        from: getCurrentAccountAddress(web3),
-        value: nAmount,
-        gas: GAS_LIMIT,
-        ...trxOverrides,
-      },
-      getPendingTrxCallback(options.pendingCallback, {
-        platform: PENDING_CALLBACK_PLATFORM,
-        type: "deposit",
-        assets: [
-          {
-            symbol: asset,
-            amount: amount,
-          },
-        ],
-      })
-    );
-  } else {
-    const lpCoreAddress = await this.getAddress("LendingPoolCore");
+    const gateway = await getWETHGatewayContract(web3);
 
+    return gateway.methods
+      .depositETH(lpAddress, userAddress, referralCode)
+      .send(
+        {
+          from: userAddress,
+          value: nAmount,
+          gas: GAS_LIMIT,
+          ...trxOverrides,
+        },
+        getPendingTrxCallback(options.pendingCallback, {
+          platform: PENDING_CALLBACK_PLATFORM,
+          type: "deposit",
+          assets: [
+            {
+              symbol: asset,
+              amount: amount,
+            },
+          ],
+        })
+      );
+  } else {
     await approveErc20IfNeeded(
       web3,
       assetAddress,
-      lpCoreAddress,
+      lpAddress,
       nAmount,
       {
         from: getCurrentAccountAddress(web3),
@@ -104,24 +123,26 @@ export async function deposit(asset, amount, options = {}) {
       }
     );
 
-    return lp.methods.deposit(assetAddress, nAmount, referralCode).send(
-      {
-        from: getCurrentAccountAddress(web3),
-        gas: GAS_LIMIT,
-        ...trxOverrides,
-        nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
-      },
-      getPendingTrxCallback(options.pendingCallback, {
-        platform: PENDING_CALLBACK_PLATFORM,
-        type: "deposit",
-        assets: [
-          {
-            symbol: asset,
-            amount: amount,
-          },
-        ],
-      })
-    );
+    return lp.methods
+      .deposit(assetAddress, nAmount, userAddress, referralCode)
+      .send(
+        {
+          from: getCurrentAccountAddress(web3),
+          gas: GAS_LIMIT,
+          ...trxOverrides,
+          nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
+        },
+        getPendingTrxCallback(options.pendingCallback, {
+          platform: PENDING_CALLBACK_PLATFORM,
+          type: "deposit",
+          assets: [
+            {
+              symbol: asset,
+              amount: amount,
+            },
+          ],
+        })
+      );
   }
 }
 
@@ -130,17 +151,18 @@ export async function withdraw(asset, amount, options = {}) {
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
 
-  const aTokenAddress = await this.getAddress("a" + asset);
-  if (!aTokenAddress) {
-    throw new Error(`Failed to get 'a${asset}' contract address`);
+  const userAddress = await getCurrentAccountAddress(web3);
+
+  const tokenAddress = await getAddress(asset);
+  if (!tokenAddress) {
+    throw new Error(`Can't find address for ${asset}`);
   }
 
-  const aTokenContract = new web3.eth.Contract(ATokenAbi, aTokenAddress);
+  const lp = await getLendingPoolContract(web3);
 
-  // Gas cost on Ropsten: 530000+
-  return aTokenContract.methods.redeem(nAmount).send(
+  return lp.methods.withdraw(tokenAddress, nAmount, userAddress).send(
     {
-      from: getCurrentAccountAddress(web3),
+      from: userAddress,
       gas: GAS_LIMIT,
       ...getTrxOverrides(options),
     },
@@ -164,22 +186,24 @@ export async function borrow(asset, amount, options = {}) {
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
 
-  const assetAddress = await this.getAddress(asset);
+  const assetAddress = await getAddress(asset);
   if (!assetAddress) {
     throw new Error(`Asset is not supported: '${asset}'`);
   }
 
   const lp = await getLendingPoolContract(web3);
+  const userAddress = await getCurrentAccountAddress(web3);
   const trxOverrides = await getTrxOverrides(options);
 
+  console.log("here");
+
   return lp.methods
-    .borrow(assetAddress, nAmount, interestRateMode, referralCode)
+    .borrow(assetAddress, nAmount, interestRateMode, referralCode, userAddress)
     .send(
       {
-        from: getCurrentAccountAddress(web3),
+        from: userAddress,
         gas: GAS_LIMIT,
         ...trxOverrides,
-        nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
       },
       getPendingTrxCallback(options.pendingCallback, {
         platform: PENDING_CALLBACK_PLATFORM,
@@ -195,23 +219,51 @@ export async function borrow(asset, amount, options = {}) {
 }
 
 export async function repay(asset, amount, options = {}) {
+  const interestRateMode = options.interestRateMode || "2";
+
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
-  const assetAddress = await this.getAddress(asset);
+  const assetAddress = await getAddress(asset);
   const nAmount = normalizeAmount(network, asset, amount);
 
   const address = getCurrentAccountAddress(web3);
 
   const lp = await getLendingPoolContract(web3);
+  const lpAddress = await getContractAddress("LendingPool", web3);
   const trxOverrides = await getTrxOverrides(options);
 
-  if (asset === "ETH") {
-    return lp.methods.repay(assetAddress, nAmount, address).send(
+  await approveErc20IfNeeded(
+    web3,
+    assetAddress,
+    lpAddress,
+    nAmount,
+    {
+      from: address,
+      gas: GAS_LIMIT,
+      ...trxOverrides,
+    },
+    {
+      pendingCallbackParams: {
+        callback: options.pendingCallback,
+        platform: PENDING_CALLBACK_PLATFORM,
+        assets: [
+          {
+            symbol: asset,
+            amount: amount,
+          },
+        ],
+      },
+    }
+  );
+
+  return lp.methods
+    .repay(assetAddress, nAmount, interestRateMode, address)
+    .send(
       {
-        from: getCurrentAccountAddress(web3),
-        value: nAmount,
+        from: address,
         gas: GAS_LIMIT,
         ...trxOverrides,
+        nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
       },
       getPendingTrxCallback(options.pendingCallback, {
         platform: PENDING_CALLBACK_PLATFORM,
@@ -224,92 +276,6 @@ export async function repay(asset, amount, options = {}) {
         ],
       })
     );
-  } else {
-    const lpCoreAddress = await this.getAddress("LendingPoolCore");
-
-    await approveErc20IfNeeded(
-      web3,
-      assetAddress,
-      lpCoreAddress,
-      nAmount,
-      {
-        from: getCurrentAccountAddress(web3),
-        gas: GAS_LIMIT,
-        ...trxOverrides,
-      },
-      {
-        pendingCallbackParams: {
-          callback: options.pendingCallback,
-          platform: PENDING_CALLBACK_PLATFORM,
-          assets: [
-            {
-              symbol: asset,
-              amount: amount,
-            },
-          ],
-        },
-      }
-    );
-
-    return lp.methods
-      .repay(assetAddress, nAmount, address)
-      .send(
-        {
-          from: getCurrentAccountAddress(web3),
-          ...trxOverrides,
-          gas: GAS_LIMIT,
-          nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
-        },
-        getPendingTrxCallback(options.pendingCallback, {
-          platform: PENDING_CALLBACK_PLATFORM,
-          type: "repay",
-          assets: [
-            {
-              symbol: asset,
-              amount: amount,
-            },
-          ],
-        })
-      )
-      .catch((e) => {
-        throw Error(
-          `Error in repay() call to the LendingPool contract: ${e.message}`
-        );
-      });
-  }
-}
-
-export async function getUserReserveData(asset) {
-  const web3 = await getWeb3();
-  const network = await getNetwork(web3);
-  const assetAddress = await getAddress(asset);
-  const address = await getCurrentAccountAddress(web3);
-
-  const lp = await getLendingPoolContract(web3);
-  const data = await lp.methods
-    .getUserReserveData(assetAddress, address)
-    .call();
-
-  return {
-    currentATokenBalance: denormalizeAmount(
-      network,
-      asset,
-      data.currentATokenBalance
-    ),
-    currentBorrowBalance: denormalizeAmount(
-      network,
-      asset,
-      data.currentBorrowBalance
-    ),
-    borrowRateMode: data.borrowRateMode,
-    borrowRate: denormalizeAmount(network, asset, data.borrowRate),
-    liquidityRate: denormalizeAmount(network, asset, data.liquidityRate),
-    principalBorrowBalance: denormalizeAmount(
-      network,
-      asset,
-      data.principalBorrowBalance
-    ),
-  };
 }
 
 export const getBorrowAssets = async () => {
@@ -317,42 +283,48 @@ export const getBorrowAssets = async () => {
   const network = await getNetwork(web3);
 
   if (!(await isSupportedNetwork(network))) {
-    return {};
+    return [];
   }
-
   const reserves = await getReserves(web3);
 
-  const lp = await getLendingPoolContract(web3);
+  const protocolData = await getProtocolDataContract(web3);
 
   const borrowAssets = [];
   const batch = new web3.BatchRequest();
 
   const promises = Object.entries(reserves).map(
-    ([reserveSymbol, reserveAddress]) => {
+    ([reserveSymbol, { address }]) => {
       const p = promisifyBatchRequest(
         batch,
-        lp.methods.getReserveData(reserveAddress).call.request
+        protocolData.methods.getReserveData(address).call.request
       );
       return p.then((result) => {
         borrowAssets.push({
-          address: reserveAddress,
           symbol: reserveSymbol,
-          totalStableDebt: "0",
-          stableBorrowRateEnabled: false,
+          address: address,
+          totalStableDebt: denormalizeAmount(
+            network,
+            reserveSymbol,
+            result.totalStableDebt,
+            reserves[reserveSymbol].decimals
+          ),
           totalVariableDebt: denormalizeAmount(
             network,
             reserveSymbol,
-            result.totalBorrowsVariable
+            result.totalVariableDebt,
+            reserves[reserveSymbol].decimals
           ),
           totalDebt: denormalizeAmount(
             network,
             reserveSymbol,
-            BigNumber(result.totalBorrowsVariable)
+            BigNumber(result.totalVariableDebt).plus(result.totalStableDebt),
+            reserves[reserveSymbol].decimals
           ),
           availableLiquidity: denormalizeAmount(
             network,
             reserveSymbol,
-            result.availableLiquidity
+            result.availableLiquidity,
+            reserves[reserveSymbol].decimals
           ),
           variableAPY: denormalizeAmount(
             network,
@@ -374,33 +346,46 @@ export const getBorrowAssets = async () => {
   batch.execute();
   await Promise.all(promises);
 
-  const priceOracleAddress = await getContractAddress(web3, "PriceOracle");
+  const priceOracleAddress = await getContractAddress("PriceOracle");
   const priceOracle = new web3.eth.Contract(PriceOracleABI, priceOracleAddress);
 
   const prices = await priceOracle.methods
-    .getAssetsPrices(Object.values(reserves).map((item) => item))
+    .getAssetsPrices(Object.values(reserves).map((item) => item.address))
     .call();
 
-  return borrowAssets.map((item, i) => ({
+  const assetsWithPrice = borrowAssets.map((item, i) => ({
     ...item,
-    priceETH:
-      item.symbol === "ETH"
-        ? "1"
-        : denormalizeAmount(network, "ETH", prices[i]),
+    priceETH: denormalizeAmount(network, "ETH", prices[i]),
   }));
+
+  const configurationData = await makeBatchRequest(
+    assetsWithPrice.map(
+      (item) =>
+        protocolData.methods.getReserveConfigurationData(item.address).call
+    )
+  );
+
+  return assetsWithPrice.map((item, i) => {
+    return {
+      ...item,
+      ...configurationData[i],
+      ltv: configurationData[i].ltv / 100,
+    };
+  });
 };
 
 export const getAssetHistoricalAPY = async (asset) => {
-  const web3 = await getWeb3();
-
   if (!asset) {
     throw new Error("Missing asset");
   }
-  const assetAddress = await getContractAddress(web3, asset);
+  const assetAddress = await getContractAddress(asset);
   const lpProviderAddress = await getContractAddress(
-    web3,
     "LendingPoolAddressesProvider"
   );
+
+  if (!assetAddress) {
+    throw new Error(`Provided asset ${asset} isn't supported`);
+  }
 
   const todayMinus1month =
     new Date(
@@ -411,14 +396,14 @@ export const getAssetHistoricalAPY = async (asset) => {
 
   const fetchHistoricalAPY = async (step, id) => {
     const res = await axios.post(
-      "https://api.thegraph.com/subgraphs/name/aave/protocol-multy-raw",
+      "https://api.thegraph.com/subgraphs/name/aave/protocol-v2",
       {
         query: `query myQuery($id: ID!){
           reserve(id: $id) {
             symbol
             paramsHistory(first: 1000, ${
               step !== 1 ? `skip: ${(step - 1) * 1000},` : ""
-            } orderDirection: desc, orderBy: timestamp, where: {timestamp_gt:${todayMinus1month}}) {
+            } orderDirection: desc, orderBy: timestamp, where: {timestamp_gt: ${todayMinus1month}}) {
               variableBorrowRate
               stableBorrowRate
               timestamp
@@ -482,25 +467,41 @@ export const getBorrowedBalance = async (address = null) => {
     address = getCurrentAccountAddress(web3);
   }
 
-  const lp = await getLendingPoolContract(web3);
+  const protocolData = await getProtocolDataContract(web3);
 
   const borrowBalance = {};
   const batch = new web3.BatchRequest();
 
   const promises = Object.entries(reserves).map(
-    ([reserveSymbol, reserveAddress]) => {
+    ([reserveSymbol, { address: reserveAddress, decimals }]) => {
       const p = promisifyBatchRequest(
         batch,
-        lp.methods.getUserReserveData(reserveAddress, address).call.request
+        protocolData.methods.getUserReserveData(reserveAddress, address).call
+          .request
       );
 
       return p.then((result) => {
         borrowBalance[reserveSymbol] = {
           ...result,
+          currentStableDebt: denormalizeAmount(
+            network,
+            reserveSymbol,
+            result.currentStableDebt,
+            decimals
+          ),
+          currentVariableDebt: denormalizeAmount(
+            network,
+            reserveSymbol,
+            result.currentVariableDebt,
+            decimals
+          ),
           totalDebt: denormalizeAmount(
             network,
             reserveSymbol,
-            result.currentBorrowBalance
+            BigNumber(result.currentVariableDebt).plus(
+              BigNumber(result.currentStableDebt)
+            ),
+            decimals
           ),
         };
       });
@@ -512,9 +513,10 @@ export const getBorrowedBalance = async (address = null) => {
   return borrowBalance;
 };
 
-export async function getBalance(address = null) {
+export const getBalance = async (address = null) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
+  const reserves = await getReserves(web3);
 
   if (!(await isSupportedNetwork(network))) {
     return {};
@@ -524,69 +526,73 @@ export async function getBalance(address = null) {
     address = getCurrentAccountAddress(web3);
   }
 
-  const lp = await getLendingPoolContract(web3);
-  const reserves = await getReserves(web3);
+  const protocolData = await getProtocolDataContract(web3);
 
-  const balance = {};
+  const borrowBalance = {};
   const batch = new web3.BatchRequest();
 
   const promises = Object.entries(reserves).map(
-    ([reserveSymbol, reserveAddress]) => {
+    ([reserveSymbol, { address: reserveAddress }]) => {
       const p = promisifyBatchRequest(
         batch,
-        lp.methods.getUserReserveData(reserveAddress, address).call.request
+        protocolData.methods.getUserReserveData(reserveAddress, address).call
+          .request
       );
       return p.then((result) => {
-        balance[reserveSymbol] = denormalizeAmount(
+        borrowBalance[reserveSymbol] = denormalizeAmount(
           network,
           reserveSymbol,
-          result.currentATokenBalance
+          result.currentATokenBalance,
+          reserves[reserveSymbol].decimals
         );
       });
     }
   );
-
   batch.execute();
   await Promise.all(promises);
 
-  return balance;
-}
+  return borrowBalance;
+};
 
-export async function getUserAccountData(address = null) {
+export const getUserAccountData = async (address = null) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
-
-  if (!(await isSupportedNetwork(network))) {
-    return {};
-  }
-
   if (!address) {
-    address = getCurrentAccountAddress(web3);
+    address = await getCurrentAccountAddress(web3);
   }
 
   const lp = await getLendingPoolContract(web3);
   const user = await lp.methods.getUserAccountData(address).call();
 
   return {
-    availableBorrowsETH: denormalizeAmount(
-      network,
-      "ETH",
-      user.availableBorrowsETH
-    ),
+    availableBorrowsETH: BigNumber(user.availableBorrowsETH)
+      .shiftedBy(-18)
+      .toFixed(),
     currentLiquidationThreshold: user.currentLiquidationThreshold,
-    healthFactor: user.healthFactor,
-    ltv: user.ltv,
-    totalBorrowsETH: denormalizeAmount(network, "ETH", user.totalBorrowsETH),
-    totalCollateralETH: denormalizeAmount(
-      network,
-      "ETH",
-      user.totalCollateralETH
-    ),
-    totalFeesETH: denormalizeAmount(network, "ETH", user.totalFeesETH),
-    totalLiquidityETH: denormalizeAmount(
-      network,
-      "ETH",
-      user.totalLiquidityETH
-    ),
+    healthFactor: BigNumber(user.healthFactor).shiftedBy(-18).toFixed(),
+    ltv: user.ltv / 100,
+    totalCollateralETH: BigNumber(user.totalCollateralETH)
+      .shiftedBy(-18)
+      .toFixed(),
+    totalDebtETH: BigNumber(user.totalDebtETH).shiftedBy(-18).toFixed(),
   };
-}
+};
+
+export const getAllReservesTokens = async (address = null) => {
+  const web3 = await getWeb3();
+  const network = await getNetwork(web3);
+
+  if (!(await isSupportedNetwork(network))) {
+    return {};
+  }
+
+  if (!address) {
+    address = getCurrentAccountAddress(web3);
+  }
+
+  const protocolData = await getProtocolDataContract(web3);
+
+  const data = await protocolData.methods.getAllReservesTokens().call();
+
+  return data;
+};
