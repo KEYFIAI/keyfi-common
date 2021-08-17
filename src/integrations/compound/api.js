@@ -585,3 +585,23 @@ export const getExchangeRate = async (cTokenSymbol) => {
 
   return cTokenContract.methods.exchangeRateCurrent().call();
 };
+
+export const estimateHealthFactor = (
+  assetData,
+  amount,
+  userData,
+  afterRepay = false
+) => {
+  const { priceETH } = assetData;
+  const { totalCollateralETH, totalDebtETH } = userData;
+
+  if (!afterRepay) {
+    return BigNumber(totalCollateralETH)
+      .dividedBy(BigNumber(totalDebtETH).plus(amount * priceETH))
+      .toFixed();
+  }
+
+  return BigNumber(totalCollateralETH)
+    .dividedBy(BigNumber(totalDebtETH).minus(amount * priceETH))
+    .toFixed();
+};

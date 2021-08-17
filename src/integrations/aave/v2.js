@@ -578,21 +578,25 @@ export const getUserAccountData = async (address = null) => {
   };
 };
 
-export const getAllReservesTokens = async (address = null) => {
-  const web3 = await getWeb3();
-  const network = await getNetwork(web3);
+export const estimateHealthFactor = (
+  assetData,
+  amount,
+  userData,
+  afterRepay = false
+) => {
+  const { priceETH } = assetData;
+  const { totalCollateralETH, totalDebtETH, currentLiquidationThreshold } =
+    userData;
 
-  if (!(await isSupportedNetwork(network))) {
-    return {};
+  if (!afterRepay) {
+    return BigNumber(totalCollateralETH)
+      .times(BigNumber(currentLiquidationThreshold).shiftedBy(-4))
+      .dividedBy(BigNumber(totalDebtETH).plus(amount * priceETH))
+      .toFixed();
   }
 
-  if (!address) {
-    address = getCurrentAccountAddress(web3);
-  }
-
-  const protocolData = await getProtocolDataContract(web3);
-
-  const data = await protocolData.methods.getAllReservesTokens().call();
-
-  return data;
+  return BigNumber(totalCollateralETH)
+    .times(BigNumber(currentLiquidationThreshold).shiftedBy(-4))
+    .dividedBy(BigNumber(totalDebtETH).minus(amount * priceETH))
+    .toFixed();
 };

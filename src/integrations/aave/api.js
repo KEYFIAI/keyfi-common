@@ -576,7 +576,7 @@ export async function getUserAccountData(address = null) {
     currentLiquidationThreshold: user.currentLiquidationThreshold,
     healthFactor: user.healthFactor,
     ltv: user.ltv,
-    totalBorrowsETH: denormalizeAmount(network, "ETH", user.totalBorrowsETH),
+    totalDebtETH: denormalizeAmount(network, "ETH", user.totalBorrowsETH),
     totalCollateralETH: denormalizeAmount(
       network,
       "ETH",
@@ -590,3 +590,28 @@ export async function getUserAccountData(address = null) {
     ),
   };
 }
+
+export const estimateHealthFactor = (
+  assetData,
+  amount,
+  userData,
+  afterRepay = false
+) => {
+  const { priceETH } = assetData;
+  const { totalCollateralETH, totalDebtETH, currentLiquidationThreshold } =
+    userData;
+
+  console.log(totalCollateralETH, currentLiquidationThreshold, totalDebtETH);
+
+  if (!afterRepay) {
+    return BigNumber(totalCollateralETH)
+      .times(BigNumber(currentLiquidationThreshold).shiftedBy(-2))
+      .dividedBy(BigNumber(totalDebtETH).plus(amount * priceETH))
+      .toFixed();
+  }
+
+  return BigNumber(totalCollateralETH)
+    .times(BigNumber(currentLiquidationThreshold).shiftedBy(-2))
+    .dividedBy(BigNumber(totalDebtETH).minus(amount * priceETH))
+    .toFixed();
+};
