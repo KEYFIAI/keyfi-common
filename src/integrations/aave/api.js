@@ -574,7 +574,7 @@ export async function getUserAccountData(address = null) {
       user.availableBorrowsETH
     ),
     currentLiquidationThreshold: user.currentLiquidationThreshold,
-    healthFactor: user.healthFactor,
+    healthFactor: BigNumber(user.healthFactor).shiftedBy(-18),
     ltv: user.ltv,
     totalDebtETH: denormalizeAmount(network, "ETH", user.totalBorrowsETH),
     totalCollateralETH: denormalizeAmount(
