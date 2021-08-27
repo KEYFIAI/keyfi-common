@@ -502,6 +502,11 @@ export const getBorrowedBalance = async (address = null) => {
             reserveSymbol,
             result.currentBorrowBalance
           ),
+          currentVariableDebt: denormalizeAmount(
+            network,
+            reserveSymbol,
+            result.currentBorrowBalance
+          ),
         };
       });
     }
@@ -601,8 +606,6 @@ export const estimateHealthFactor = (
   const { totalCollateralETH, totalDebtETH, currentLiquidationThreshold } =
     userData;
 
-  console.log(totalCollateralETH, currentLiquidationThreshold, totalDebtETH);
-
   if (!afterRepay) {
     return BigNumber(totalCollateralETH)
       .times(BigNumber(currentLiquidationThreshold).shiftedBy(-2))
@@ -612,6 +615,6 @@ export const estimateHealthFactor = (
 
   return BigNumber(totalCollateralETH)
     .times(BigNumber(currentLiquidationThreshold).shiftedBy(-2))
-    .dividedBy(BigNumber(totalDebtETH).minus(amount * priceETH))
+    .dividedBy(Math.max(0, BigNumber(totalDebtETH).minus(amount * priceETH)))
     .toFixed();
 };

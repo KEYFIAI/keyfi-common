@@ -195,8 +195,6 @@ export async function borrow(asset, amount, options = {}) {
   const userAddress = await getCurrentAccountAddress(web3);
   const trxOverrides = await getTrxOverrides(options);
 
-  console.log("here");
-
   return lp.methods
     .borrow(assetAddress, nAmount, interestRateMode, referralCode, userAddress)
     .send(
@@ -597,6 +595,6 @@ export const estimateHealthFactor = (
 
   return BigNumber(totalCollateralETH)
     .times(BigNumber(currentLiquidationThreshold).shiftedBy(-4))
-    .dividedBy(BigNumber(totalDebtETH).minus(amount * priceETH))
+    .dividedBy(Math.max(0, BigNumber(totalDebtETH).minus(amount * priceETH)))
     .toFixed();
 };
