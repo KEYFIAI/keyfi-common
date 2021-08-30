@@ -159,6 +159,9 @@ export const getUserAccountData = async (address = null) => {
   }
   return {
     availableBorrowsETH,
+    healthFactor: "0",
+    totalCollateralETH: "0",
+    totalDebtETH: "0",
   };
 };
 
