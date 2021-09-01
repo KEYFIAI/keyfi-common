@@ -335,7 +335,10 @@ export const getBorrowAssets = async () => {
       );
       return p.then((result) => {
         borrowAssets.push({
-          address: reserveAddress,
+          address:
+            reserveSymbol === "ETH"
+              ? "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+              : reserveAddress,
           symbol: reserveSymbol,
           totalStableDebt: "0",
           stableBorrowRateEnabled: false,

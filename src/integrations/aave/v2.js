@@ -554,7 +554,6 @@ export const getBalance = async (address = null) => {
 
 export const getUserAccountData = async (address = null) => {
   const web3 = await getWeb3();
-  const network = await getNetwork(web3);
   if (!address) {
     address = await getCurrentAccountAddress(web3);
   }
