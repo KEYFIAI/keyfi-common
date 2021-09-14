@@ -20,7 +20,7 @@ const FEE = 0.0002;
 const DEFAULT_MAX_SLIPPAGE = 0.01;
 const PENDING_CALLBACK_PLATFORM = "curve";
 
-const addresses = {
+export const addresses = {
   assets: {
     DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
     USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -28,7 +28,7 @@ const addresses = {
   contracts: {
     swap: "0xA2B47E3D5c44877cca798226B7B8118F9BFb7A56",
     token: "0x845838DF265Dcd2c412A1Dc9e959c7d08537f8a2",
-  }
+  },
 };
 
 const swapTokenSymbol = "cDAI+cUSDC";
@@ -39,7 +39,7 @@ export const isSupportedNetwork = async (web3OrNetwork) => {
 };
 
 const assertSupportedChain = async (network) => {
-  if (!await isSupportedNetwork(network)) {
+  if (!(await isSupportedNetwork(network))) {
     throw new Error(`Network chainId=${network.chainId} is not supported!`);
   }
 };
@@ -49,7 +49,7 @@ export const addLiquidity = async (
   assetAAmount,
   assetB,
   assetBAmount,
-  options = {},
+  options = {}
 ) => {
   if (assetA === "cDAI" && assetB === "cUSDC") {
     // Skip - all is ok
@@ -68,13 +68,16 @@ export const addLiquidity = async (
   const network = await getNetwork(web3);
   await assertSupportedChain(network);
 
-  const assets = [{
-    symbol: assetA,
-    amount: assetAAmount,
-  }, {
-    symbol: assetB,
-    amount: assetBAmount,
-  }];
+  const assets = [
+    {
+      symbol: assetA,
+      amount: assetAAmount,
+    },
+    {
+      symbol: assetB,
+      amount: assetBAmount,
+    },
+  ];
 
   await Promise.all(
     assets.map(async (asset) => {
@@ -91,12 +94,14 @@ export const addLiquidity = async (
       const denormalizedRate = denormalizeAmount(
         network,
         asset.underlyingSymbol,
-        BigNumber(asset.exchangeRate)
-          .shiftedBy(-compoundApi.EXCHANGE_RATE_DECIMALS)
+        BigNumber(asset.exchangeRate).shiftedBy(
+          -compoundApi.EXCHANGE_RATE_DECIMALS
+        )
       );
 
-      asset.cTokenAmount =
-        BigNumber(asset.amount).dividedBy(denormalizedRate).toFixed(0);
+      asset.cTokenAmount = BigNumber(asset.amount)
+        .dividedBy(denormalizedRate)
+        .toFixed(0);
 
       return;
     }
@@ -108,10 +113,12 @@ export const addLiquidity = async (
 
   const swapContractAddress = addresses.contracts.swap;
   const swapContract = new web3.eth.Contract(swapAbi, swapContractAddress);
-  let resultAmount = await swapContract.methods.calc_token_amount(
-    assets.map((asset) => asset.cTokenAmount),
-    true,
-  ).call();
+  let resultAmount = await swapContract.methods
+    .calc_token_amount(
+      assets.map((asset) => asset.cTokenAmount),
+      true
+    )
+    .call();
 
   resultAmount = BigNumber(resultAmount)
     .multipliedBy(1 - slippage)
@@ -123,7 +130,10 @@ export const addLiquidity = async (
   await Promise.all(
     assets.map(async (asset) => {
       if (asset.amount > 0) {
-        asset.address = await compoundApi.getContractAddress(web3, asset.symbol);
+        asset.address = await compoundApi.getContractAddress(
+          web3,
+          asset.symbol
+        );
 
         await approveErc20IfNeeded(
           web3,
@@ -138,35 +148,39 @@ export const addLiquidity = async (
             pendingCallbackParams: {
               callback: options.pendingCallback,
               platform: PENDING_CALLBACK_PLATFORM,
-              assets: [{
-                symbol: asset.symbol,
-                amount: asset.amount,
-              }],
-            }
-          },
+              assets: [
+                {
+                  symbol: asset.symbol,
+                  amount: asset.amount,
+                },
+              ],
+            },
+          }
         );
       }
     })
   );
 
-  return swapContract.methods.add_liquidity(
-    assets.map((asset) => asset.cTokenAmount),
-    resultAmount,
-  ).send(
-    {
-      from: getCurrentAccountAddress(web3),
-      gas: GAS_LIMIT_DEPOSIT_WITHDRAW,
-      ...trxOverrides,
-    },
-    getPendingTrxCallback(options.pendingCallback, {
-      platform: PENDING_CALLBACK_PLATFORM,
-      type: "add liquidity",
-      assets: assets.map((asset) => ({
-        symbol: asset.symbol,
-        amount: asset.amount,
-      })),
-    }),
-  );
+  return swapContract.methods
+    .add_liquidity(
+      assets.map((asset) => asset.cTokenAmount),
+      resultAmount
+    )
+    .send(
+      {
+        from: getCurrentAccountAddress(web3),
+        gas: GAS_LIMIT_DEPOSIT_WITHDRAW,
+        ...trxOverrides,
+      },
+      getPendingTrxCallback(options.pendingCallback, {
+        platform: PENDING_CALLBACK_PLATFORM,
+        type: "add liquidity",
+        assets: assets.map((asset) => ({
+          symbol: asset.symbol,
+          amount: asset.amount,
+        })),
+      })
+    );
 };
 
 export const getAccountLiquidityAll = async (accountAddress = null) => {
@@ -177,7 +191,7 @@ export const getAccountLiquidityAll = async (accountAddress = null) => {
   }
 
   const network = await getNetwork(web3);
-  if (!await isSupportedNetwork(network)) {
+  if (!(await isSupportedNetwork(network))) {
     return [];
   }
 
@@ -185,14 +199,12 @@ export const getAccountLiquidityAll = async (accountAddress = null) => {
   const swapContract = new web3.eth.Contract(swapAbi, swapContractAddress);
 
   const swapTokenAddress = addresses.contracts.token;
-  const swapTokenContract = new web3.eth.Contract(
-    erc20Abi,
-    swapTokenAddress,
-  );
+  const swapTokenContract = new web3.eth.Contract(erc20Abi, swapTokenAddress);
 
   const blockNumber = await web3.eth.getBlockNumber();
-  const swapTokenBalance =
-    await swapTokenContract.methods.balanceOf(accountAddress).call();
+  const swapTokenBalance = await swapTokenContract.methods
+    .balanceOf(accountAddress)
+    .call();
   const swapTokenSupply = await swapTokenContract.methods.totalSupply().call();
 
   const tokens = [
@@ -208,16 +220,19 @@ export const getAccountLiquidityAll = async (accountAddress = null) => {
       );
       const cErc20Contract = new web3.eth.Contract(
         compoundApi.cErc20Abi,
-        cErc20Address,
+        cErc20Address
       );
 
       token.exRate = denormalizeAmount(
         network,
         token.symbol,
-        BigNumber(await cErc20Contract.methods.exchangeRateStored().call())
-          .shiftedBy(-compoundApi.EXCHANGE_RATE_DECIMALS),
+        BigNumber(
+          await cErc20Contract.methods.exchangeRateStored().call()
+        ).shiftedBy(-compoundApi.EXCHANGE_RATE_DECIMALS)
       );
-      token.supplyRate = await cErc20Contract.methods.supplyRatePerBlock().call();
+      token.supplyRate = await cErc20Contract.methods
+        .supplyRatePerBlock()
+        .call();
       token.oldBlock = await cErc20Contract.methods.accrualBlockNumber().call();
 
       // rate = exRate + exRate * supply_rate * (block.number - old_block) / 10 ** 18
@@ -255,15 +270,22 @@ export const getAccountLiquidityAll = async (accountAddress = null) => {
     return [];
   }
 
-  return [{
-    "DAI": tokens[0].balance.toFixed(),
-    "USDC": tokens[1].balance.toFixed(),
-    assetA: "DAI",
-    assetB: "USDC",
-  }];
+  return [
+    {
+      DAI: tokens[0].balance.toFixed(),
+      USDC: tokens[1].balance.toFixed(),
+      assetA: "DAI",
+      assetB: "USDC",
+    },
+  ];
 };
 
-export const removeLiquidity = async (assetA, assetB, percent, options = {}) => {
+export const removeLiquidity = async (
+  assetA,
+  assetB,
+  percent,
+  options = {}
+) => {
   if (assetA === "cDAI" && assetB === "cUSDC") {
     // Skip - all is ok
   } else if (assetA === "cUSDC" && assetB === "cDAI") {
@@ -276,13 +298,11 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
   const accountAddress = getCurrentAccountAddress(web3);
 
   const swapTokenAddress = addresses.contracts.token;
-  const swapTokenContract = new web3.eth.Contract(
-    erc20Abi,
-    swapTokenAddress,
-  );
+  const swapTokenContract = new web3.eth.Contract(erc20Abi, swapTokenAddress);
 
-  const swapTokenBalance =
-    await swapTokenContract.methods.balanceOf(accountAddress).call();
+  const swapTokenBalance = await swapTokenContract.methods
+    .balanceOf(accountAddress)
+    .call();
   const swapTokenSupply = await swapTokenContract.methods.totalSupply().call();
 
   const swapContractAddress = addresses.contracts.swap;
@@ -329,29 +349,37 @@ export const removeLiquidity = async (assetA, assetB, percent, options = {}) => 
       pendingCallbackParams: {
         callback: options.pendingCallback,
         platform: PENDING_CALLBACK_PLATFORM,
-        assets: [{
-          symbol: swapTokenSymbol,
-          amount: denormalizeAmount(network, swapTokenSymbol, swapTokenAmount),
-        }],
-      }
-    },
+        assets: [
+          {
+            symbol: swapTokenSymbol,
+            amount: denormalizeAmount(
+              network,
+              swapTokenSymbol,
+              swapTokenAmount
+            ),
+          },
+        ],
+      },
+    }
   );
 
-  return swapContract.methods.remove_liquidity(swapTokenAmount, minReturns).send(
-    {
-      from: accountAddress,
-      gas: GAS_LIMIT_DEPOSIT_WITHDRAW,
-      ...trxOverrides,
-    },
-    getPendingTrxCallback(options.pendingCallback, {
-      platform: PENDING_CALLBACK_PLATFORM,
-      type: "remove liquidity",
-      assets: assets.map((asset) => ({
-        symbol: asset.symbol,
-        amount: denormalizeAmount(network, asset.symbol, asset.minReturn),
-      })),
-    }),
-  );
+  return swapContract.methods
+    .remove_liquidity(swapTokenAmount, minReturns)
+    .send(
+      {
+        from: accountAddress,
+        gas: GAS_LIMIT_DEPOSIT_WITHDRAW,
+        ...trxOverrides,
+      },
+      getPendingTrxCallback(options.pendingCallback, {
+        platform: PENDING_CALLBACK_PLATFORM,
+        type: "remove liquidity",
+        assets: assets.map((asset) => ({
+          symbol: asset.symbol,
+          amount: denormalizeAmount(network, asset.symbol, asset.minReturn),
+        })),
+      })
+    );
 };
 
 export const getSupportedAssets = async () => {

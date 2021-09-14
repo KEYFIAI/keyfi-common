@@ -6,7 +6,7 @@ const mainnet = 1;
 const ropsten = 3;
 const ethAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
-const addresses = {
+export const addresses = {
   [mainnet]: {
     LendingPoolAddressesProvider: "0x24a42fD28C976A61Df5D00D0599C34c4f90748c8",
     PriceOracle: "0xA50ba011c48153De246E5192C8f9258A2ba79Ca9",
