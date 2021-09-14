@@ -1,3 +1,4 @@
+import Web3 from "web3";
 import { getWeb3, getNetwork } from "./web3";
 
 // Platform constants
@@ -65,6 +66,16 @@ export const range = (start, end) => {
   return Array(end - start + 1)
     .fill()
     .map((_, idx) => start + idx);
+};
+
+/**
+ * Returns address with correct capitalization
+ * @param {string} address Address
+ * @return {string} Address with correct capitalization
+ */
+export const getAddressSum = (address) => {
+  const web3 = new Web3();
+  return web3.utils.toChecksumAddress(address);
 };
 
 /**
@@ -153,9 +164,7 @@ export const getContractPlatform = (address) => {
     Object.values(uniswap.mainnet).some(
       (item) => item.toLowerCase() === address
     ) ||
-    uniswapPairs.mainnet.some(
-      ({ address }) => address.toLowerCase() === address
-    )
+    uniswapPairs.mainnet.some((pair) => pair.address.toLowerCase() === address)
   ) {
     return "Uniswap";
   }
