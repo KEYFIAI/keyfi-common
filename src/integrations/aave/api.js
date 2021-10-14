@@ -126,6 +126,7 @@ export async function deposit(asset, amount, options = {}) {
 }
 
 export async function withdraw(asset, amount, options = {}) {
+  asset = asset === "WETH" ? "ETH" : asset;
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
