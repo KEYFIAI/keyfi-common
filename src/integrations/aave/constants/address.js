@@ -12,6 +12,7 @@ export const addresses = {
     PriceOracle: "0xA50ba011c48153De246E5192C8f9258A2ba79Ca9",
     reserves: {
       ETH: ethAddress,
+      WETH: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
       AAVE: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
       BAT: "0x0D8775F648430679A709E98d2b0Cb6250d2887EF",
       BUSD: "0x4Fabb145d64652a948d72533023f6E7A623C7C53",

@@ -55,7 +55,9 @@ export const getAddress = (asset) => {
 
 export const getSupportedAssets = async () => {
   const web3 = await getWeb3();
-  return Object.keys(await getReserves(web3));
+  const data = await getReserves(web3);
+
+  return [...Object.keys(data), "WETH"];
 };
 
 export async function deposit(asset, amount, options = {}) {
