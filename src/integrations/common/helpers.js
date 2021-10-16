@@ -24,6 +24,11 @@ import { addresses as aave } from "../aave/constants/address";
 import { addresses as aavev2 } from "../aave/constants/constantsv2";
 import { addresses as curve } from "../curve/api";
 
+// Token list
+import ERC20List from "../../tokenLists/tokensListETH1.json";
+import ERC20List2 from "../../tokenLists/tokensListETH2.json";
+import ERC20List3 from "../../tokenLists/tokensListETH3.json";
+
 export const processWeb3OrNetworkArgument = async (web3OrNetwork) => {
   if (!web3OrNetwork) {
     const web3 = await getWeb3();
@@ -169,5 +174,23 @@ export const getContractPlatform = (address) => {
     return "Uniswap";
   }
 
+  return undefined;
+};
+
+export const getAddress = (symbol) => {
+  symbol = symbol === "ETH" ? "WETH" : symbol;
+
+  const tokenList = [
+    ...ERC20List.tokens,
+    ...ERC20List2.tokens,
+    ...ERC20List3.tokens,
+  ];
+
+  const tokenObject = tokenList.find(
+    (item) => item.symbol === symbol.toUpperCase()
+  );
+  if (tokenObject) {
+    return getAddressSum(tokenObject.id);
+  }
   return undefined;
 };
