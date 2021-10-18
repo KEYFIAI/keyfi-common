@@ -480,7 +480,7 @@ export const getBorrowedBalance = async (address = null) => {
     return {};
   }
 
-  const reserves = await getReserves(web3);
+  const reserves = await getReserves(web3, false);
 
   if (!address) {
     address = getCurrentAccountAddress(web3);

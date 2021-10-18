@@ -135,12 +135,16 @@ export const getContractAddress = async (web3, contractName) => {
   return fetchedAddress;
 };
 
-export async function getReserves(web3) {
+export async function getReserves(web3, includeWETH = true) {
   const { chainId } = await getNetwork(web3);
   const networkAddresses = addresses[chainId];
 
   if (!networkAddresses) {
     throw new Error(`Network with chainId=${chainId} is not supported!`);
+  }
+
+  if (!includeWETH) {
+    delete networkAddresses.reserves.WETH;
   }
 
   return networkAddresses.reserves;
