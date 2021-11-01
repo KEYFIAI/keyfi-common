@@ -2766,7 +2766,7 @@ const supportedPairs = [
   },
 ];
 
-export const supportedPairsv2 = [
+ const supportedPairsv2 = [
   {
     id: "0xd10321489BeB6D3a83e09Fa059CF6C8BE5A4C542",
     token0: {
@@ -3678,7 +3678,15 @@ export const supportedPairsv2 = [
   },
 ];
 
-export const PAIR_NOT_EXISTS = "PAIR_NOT_EXISTS";
-export const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
+ const PAIR_NOT_EXISTS = "PAIR_NOT_EXISTS";
+ const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-export { contractAddresses, supportedPairs };
+
+
+module.exports={
+  supportedPairsv2,
+  PAIR_NOT_EXISTS,
+  NULL_ADDRESS,
+  contractAddresses,
+  supportedPairs
+}

@@ -1,12 +1,13 @@
-import LendingPoolAddressesProviderABI from "../abi/LendingPoolAddressesProvider.abi.json";
-import LendingPoolAbi from "../abi/LendingPool.abi.json";
-import { getNetwork, processWeb3OrNetworkArgument } from "../../common";
+const LendingPoolAddressesProviderABI = require("../abi/LendingPoolAddressesProvider.abi.json");
+const LendingPoolAbi = require("../abi/LendingPool.abi.json");
+const getNetwork = require("../../common").getNetwork;
+const processWeb3OrNetworkArgument = require("../../common").processWeb3OrNetworkArgument;
 
 const mainnet = 1;
 const ropsten = 3;
 const ethAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
-export const addresses = {
+ const addresses = {
   [mainnet]: {
     LendingPoolAddressesProvider: "0x24a42fD28C976A61Df5D00D0599C34c4f90748c8",
     PriceOracle: "0xA50ba011c48153De246E5192C8f9258A2ba79Ca9",
@@ -88,12 +89,12 @@ const fetchContractDynamicAddress = (web3, contractName, networkAddresses) => {
   }
 };
 
-export const isSupportedNetwork = async (web3OrNetwork) => {
+ const isSupportedNetwork = async (web3OrNetwork) => {
   const { chainId } = await processWeb3OrNetworkArgument(web3OrNetwork);
   return Boolean(addresses[chainId]);
 };
 
-export const getContractAddress = async (web3, contractName) => {
+ const getContractAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
 
   if (!(await isSupportedNetwork(network))) {
@@ -135,7 +136,7 @@ export const getContractAddress = async (web3, contractName) => {
   return fetchedAddress;
 };
 
-export async function getReserves(web3, includeWETH = true) {
+ async function getReserves(web3, includeWETH = true) {
   const { chainId } = await getNetwork(web3);
   const networkAddresses = addresses[chainId];
 
@@ -148,4 +149,11 @@ export async function getReserves(web3, includeWETH = true) {
   }
 
   return networkAddresses.reserves;
+}
+
+module.exports={
+  addresses,
+  isSupportedNetwork,
+  getContractAddress,
+  getReserves
 }

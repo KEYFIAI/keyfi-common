@@ -1,14 +1,14 @@
 
-import PubSub from 'pubsub-js';
+const PubSub = require('pubsub-js');
 
-export const Web3Events = {
+exports.Web3Events = {
   accountsChanged: 'accountsChanged',
 };
 
 
 let eventsLoaded = {};
 
-export function loadMetamaskEvents() {
+exports.loadMetamaskEvents = () => {
   if (eventsLoaded['metamask']) {
     return;
   }
@@ -22,8 +22,7 @@ export function loadMetamaskEvents() {
   });
 }
 
-
-export function loadWalletConnectEvents(provider) {
+exports.loadWalletConnectEvents = (provider)=> {
   if (eventsLoaded['walletConnect']) {
     return;
   }
@@ -51,6 +50,6 @@ export function loadWalletConnectEvents(provider) {
   // });
 }
 
-export {
+module.exports={
   PubSub
-};
+}

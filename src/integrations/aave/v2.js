@@ -1,43 +1,39 @@
-import BigNumber from "bignumber.js";
-import {
-  approveErc20IfNeeded,
-  denormalizeAmount,
-  getCurrentAccountAddress,
-  getNetwork,
-  getPendingTrxCallback,
-  getWeb3,
-  makeBatchRequest,
-  normalizeAmount,
-  promisifyBatchRequest,
-} from "../common";
-import {
-  fetchContractDynamicAddress,
-  getContractAddress,
-  getReserveAddress,
-  getReserves,
-  isSupportedNetwork,
-} from "./constants/constantsv2";
+const approveErc20IfNeeded = require("../common").approveErc20IfNeeded;
+const denormalizeAmount = require("../common").denormalizeAmount;
+const getCurrentAccountAddress = require("../common").getCurrentAccountAddress;
+const getNetwork = require("../common").getNetwork;
+const getPendingTrxCallback = require("../common").getPendingTrxCallback;
+const getWeb3 = require("../common").getWeb3;
+const makeBatchRequest = require("../common").makeBatchRequest;
+const normalizeAmount = require("../common").normalizeAmount;
+const promisifyBatchRequest = require("../common").promisifyBatchRequest;
+const fetchContractDynamicAddress = require("./constants/constantsv2").fetchContractDynamicAddress;
+const getContractAddress = require("./constants/constantsv2").getContractAddress;
+const getReserveAddress = require("./constants/constantsv2").getReserveAddress;
+const getReserves = require("./constants/constantsv2").getReserves;
+const isSupportedNetwork = require("./constants/constantsv2").isSupportedNetwork;
+const BigNumber = require("bignumber.js");
+const LendingPoolABI = require("./abi/LendingPoolv2.abi.json");
+const ProtocolDataABI = require("./abi/ProtocolDataProviderv2.abi.json");
+const WETHGatewayABI = require("./abi/WETHGatewayv2.abi.json");
+const PriceOracleABI = require("./abi/PriceOraclev2.abi.json");
+const axios = require("axios");
 
-import LendingPoolABI from "./abi/LendingPoolv2.abi.json";
-import ProtocolDataABI from "./abi/ProtocolDataProviderv2.abi.json";
-import WETHGatewayABI from "./abi/WETHGatewayv2.abi.json";
-import PriceOracleABI from "./abi/PriceOraclev2.abi.json";
-import axios from "axios";
 
 const GAS_LIMIT = 750000;
 const PENDING_CALLBACK_PLATFORM = "aave";
 
-export const getLendingPoolContract = async (web3) => {
+ const getLendingPoolContract = async (web3) => {
   const lpAddress = await fetchContractDynamicAddress(web3, "LendingPool");
   return new web3.eth.Contract(LendingPoolABI, lpAddress);
 };
 
-export const getProtocolDataContract = async (web3) => {
+ const getProtocolDataContract = async (web3) => {
   const lpAddress = await getContractAddress("ProtocolData");
   return new web3.eth.Contract(ProtocolDataABI, lpAddress);
 };
 
-export const getWETHGatewayContract = async (web3) => {
+ const getWETHGatewayContract = async (web3) => {
   const WETHGatewayAddress = await getContractAddress("WETHGateway");
   return new web3.eth.Contract(WETHGatewayABI, WETHGatewayAddress);
 };
@@ -49,18 +45,18 @@ const getTrxOverrides = async (options) => {
   };
 };
 
-export const getAddress = (asset) => {
+ const getAddress = (asset) => {
   return getReserveAddress(asset);
 };
 
-export const getSupportedAssets = async () => {
+ const getSupportedAssets = async () => {
   const web3 = await getWeb3();
   const data = await getReserves(web3);
 
   return [...Object.keys(data), "WETH"];
 };
 
-export async function deposit(asset, amount, options = {}) {
+ async function deposit(asset, amount, options = {}) {
   const referralCode = "0";
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
@@ -148,7 +144,7 @@ export async function deposit(asset, amount, options = {}) {
   }
 }
 
-export async function withdraw(asset, amount, options = {}) {
+ async function withdraw(asset, amount, options = {}) {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
@@ -181,7 +177,7 @@ export async function withdraw(asset, amount, options = {}) {
   );
 }
 
-export async function borrow(asset, amount, options = {}) {
+ async function borrow(asset, amount, options = {}) {
   const interestRateMode = options.interestRateMode || "2";
   const referralCode = options.referralCode || "0";
   const web3 = await getWeb3();
@@ -218,7 +214,7 @@ export async function borrow(asset, amount, options = {}) {
     );
 }
 
-export async function repay(asset, amount, options = {}) {
+ async function repay(asset, amount, options = {}) {
   const interestRateMode = options.interestRateMode || "2";
 
   const web3 = await getWeb3();
@@ -278,7 +274,7 @@ export async function repay(asset, amount, options = {}) {
     );
 }
 
-export const getBorrowAssets = async () => {
+ const getBorrowAssets = async () => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
 
@@ -374,7 +370,7 @@ export const getBorrowAssets = async () => {
   });
 };
 
-export const getAssetHistoricalAPY = async (asset) => {
+ const getAssetHistoricalAPY = async (asset) => {
   if (!asset) {
     throw new Error("Missing asset");
   }
@@ -453,7 +449,7 @@ export const getAssetHistoricalAPY = async (asset) => {
   }
 };
 
-export const getBorrowedBalance = async (address = null) => {
+ const getBorrowedBalance = async (address = null) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
 
@@ -513,7 +509,7 @@ export const getBorrowedBalance = async (address = null) => {
   return borrowBalance;
 };
 
-export const getBalance = async (address = null) => {
+ const getBalance = async (address = null) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const reserves = await getReserves(web3);
@@ -554,7 +550,7 @@ export const getBalance = async (address = null) => {
   return borrowBalance;
 };
 
-export const getUserAccountData = async (address = null) => {
+ const getUserAccountData = async (address = null) => {
   const web3 = await getWeb3();
   if (!address) {
     address = await getCurrentAccountAddress(web3);
@@ -577,7 +573,7 @@ export const getUserAccountData = async (address = null) => {
   };
 };
 
-export const estimateHealthFactor = (
+ const estimateHealthFactor = (
   assetData,
   amount,
   userData,
@@ -599,3 +595,22 @@ export const estimateHealthFactor = (
     .dividedBy(Math.max(0, BigNumber(totalDebtETH).minus(amount * priceETH)))
     .toFixed();
 };
+
+
+module.exports={
+  getLendingPoolContract,
+  getProtocolDataContract,
+  getWETHGatewayContract,
+  getAddress,
+  getSupportedAssets,
+  deposit,
+  withdraw,
+  borrow,
+  repay,
+  getBorrowAssets,
+  getAssetHistoricalAPY,
+  getBorrowedBalance,
+  getBalance,
+  getUserAccountData,
+  estimateHealthFactor
+}

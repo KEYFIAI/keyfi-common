@@ -1,29 +1,25 @@
-import {
-  approveErc20IfNeeded,
-  getCurrentAccountAddress,
-  getNetwork,
-  getPendingTrxCallback,
-  getTrxOverrides,
-  getWeb3,
-  normalizeAmount,
-  denormalizeAmount,
-  processWeb3OrNetworkArgument,
-} from "../common";
-import {
-  accountNumbers,
-  actionType,
-  contractAddresses,
-  supportedAssets,
-  marketId,
-} from "./constants";
-import SoloMarginAbi from "./solo-margin.abi.json";
-import PayableSoloMarginAbi from "./payable-solo-margin.abi.json";
+const approveErc20IfNeeded = require("../common").approveErc20IfNeeded;
+const getCurrentAccountAddress = require("../common").getCurrentAccountAddress;
+const getNetwork = require("../common").getNetwork;
+const getPendingTrxCallback = require("../common").getPendingTrxCallback;
+const getTrxOverrides = require("../common").getTrxOverrides;
+const getWeb3 = require("../common").getWeb3;
+const normalizeAmount = require("../common").normalizeAmount;
+const denormalizeAmount = require("../common").denormalizeAmount;
+const processWeb3OrNetworkArgument = require("../common").processWeb3OrNetworkArgument;
+const accountNumbers = require("./constants").accountNumbers;
+const actionType = require("./constants").actionType;
+const contractAddresses = require("./constants").contractAddresses;
+const supportedAssets = require("./constants").supportedAssets;
+const marketId = require("./constants").marketId;
+const SoloMarginAbi = require("./solo-margin.abi.json");
+const PayableSoloMarginAbi = require("./payable-solo-margin.abi.json");
 
 // Deposit can take more than 200000+ of gas
 const GAS_LIMIT = 250000;
 const PENDING_CALLBACK_PLATFORM = "dydx";
 
-export const isSupportedNetwork = async (web3OrNetwork) => {
+ const isSupportedNetwork = async (web3OrNetwork) => {
   const network = await processWeb3OrNetworkArgument(web3OrNetwork);
   return Boolean(contractAddresses[network.name]);
 };
@@ -47,7 +43,7 @@ const getContractAddress = async (web3, contractName) => {
   return address;
 };
 
-export const getBalance = async (accountAddress = null) => {
+ const getBalance = async (accountAddress = null) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
 
@@ -83,7 +79,7 @@ export const getBalance = async (accountAddress = null) => {
   return balance;
 };
 
-export const deposit = async (asset, amount, options = {}) => {
+ const deposit = async (asset, amount, options = {}) => {
   if (!supportedAssets.includes(asset)) {
     throw new Error(`Asset ${asset} is not supported`);
   }
@@ -174,7 +170,7 @@ if (asset !== "ETH") {
   );
 };
 
-export const withdraw = async (asset, amount, options = {}) => {
+ const withdraw = async (asset, amount, options = {}) => {
   if (!supportedAssets.includes(asset)) {
     throw new Error(`Asset ${asset} is not supported`);
   }
@@ -240,4 +236,12 @@ export const withdraw = async (asset, amount, options = {}) => {
   );
 };
 
-export const getSupportedAssets = () => supportedAssets;
+ const getSupportedAssets = () => supportedAssets;
+
+ module.exports={
+  isSupportedNetwork,
+  getBalance,
+  deposit,
+  withdraw,
+  getSupportedAssets
+}

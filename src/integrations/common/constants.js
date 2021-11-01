@@ -1,4 +1,4 @@
-export const erc20Addresses = {
+ const erc20Addresses = {
   mainnet: {
     WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     CHAI: "0x06AF07097C9Eeb7fD685c692751D5C66dB49c215",
@@ -215,7 +215,7 @@ export const erc20Addresses = {
   },
 };
 
-export const decimals = {
+ const decimals = {
   mainnet: {
     ETH: 18,
     KEYFIETH_LP: 18,
@@ -594,7 +594,7 @@ export const decimals = {
   },
 };
 
-export const networkNames = {
+ const networkNames = {
   1: "mainnet",
   3: "ropsten",
   42: "kovan",
@@ -603,7 +603,7 @@ export const networkNames = {
   137: "matic",
 };
 
-export const coingeckoAssetsIds = {
+ const coingeckoAssetsIds = {
   ETH: "ethereum",
   WETH: "weth",
   CHAI: "chai",
@@ -732,3 +732,10 @@ export const coingeckoAssetsIds = {
   ZEC: "zcash",
   CELR: "celer-network",
 };
+
+module.exports= {
+  erc20Addresses,
+  decimals,
+  networkNames,
+  coingeckoAssetsIds
+}

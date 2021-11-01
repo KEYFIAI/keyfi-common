@@ -1,16 +1,13 @@
-import axios from "axios";
-
-import { contractAddresses } from "./constants";
-import {
-  approveErc20IfNeeded,
-  getCurrentAccountAddress,
-  getTrxOverrides,
-  getNetwork,
-  getWeb3,
-  normalizeAmount,
-  denormalizeAmount,
-  processWeb3OrNetworkArgument,
-} from "../common";
+const approveErc20IfNeeded = require("../common").approveErc20IfNeeded;
+const getCurrentAccountAddress = require("../common").getCurrentAccountAddress;
+const getTrxOverrides = require("../common").getTrxOverrides;
+const getNetwork = require("../common").getNetwork;
+const getWeb3 = require("../common").getWeb3;
+const normalizeAmount = require("../common").normalizeAmount;
+const denormalizeAmount = require("../common").denormalizeAmount;
+const processWeb3OrNetworkArgument = require("../common").processWeb3OrNetworkArgument;
+const axios = require("axios");
+const contractAddresses = require("./constants").contractAddresses;
 
 const DEFAULT_MAX_SLIPPAGE = 0.02;
 const GAS_LIMIT = 1000000;
@@ -20,7 +17,7 @@ const inchRestApi = axios.create({
   baseURL: "https://api.1inch.exchange/v2.0",
 });
 
-export const isSupportedNetwork = async (web3OrNetwork) => {
+ const isSupportedNetwork = async (web3OrNetwork) => {
   const network = await processWeb3OrNetworkArgument(web3OrNetwork);
   return Boolean(contractAddresses[network.name]);
 };
@@ -42,7 +39,7 @@ const getContractAddress = async (web3, contractName) => {
   return address;
 };
 
-export const estimateSwap = async (fromAssetSymbol, fromAmount, toAssetSymbol) => {
+ const estimateSwap = async (fromAssetSymbol, fromAmount, toAssetSymbol) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   fromAmount = normalizeAmount(network, fromAssetSymbol, fromAmount);
@@ -79,7 +76,7 @@ export const estimateSwap = async (fromAssetSymbol, fromAmount, toAssetSymbol) =
   };
 };
 
-export const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options = {}) => {
+ const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options = {}) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const fromAmountDecimalized = normalizeAmount(
@@ -174,3 +171,9 @@ export const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options =
     .once("error", reject);
   });
 };
+
+module.exports={
+  isSupportedNetwork,
+  estimateSwap,
+  swap
+}

@@ -1,6 +1,6 @@
-import "dotenv/config";
-import api from "..";
-import erc20abi from "../common/erc20.abi.json";
+require("dotenv/config");
+const api = require("..");
+const erc20abi = require("../common/erc20.abi.json");
 
 const main = async () => {
   const web3 = await api.getWeb3();

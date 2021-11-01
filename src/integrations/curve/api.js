@@ -1,17 +1,15 @@
-import BigNumber from "bignumber.js";
-import swapAbi from "./swap.abi.json";
-import {
-  approveErc20IfNeeded,
-  getCurrentAccountAddress,
-  getPendingTrxCallback,
-  getTrxOverrides,
-  getNetwork,
-  getWeb3,
-  erc20Abi,
-  denormalizeAmount,
-  processWeb3OrNetworkArgument,
-} from "../common";
-import * as compoundApi from "../compound";
+const approveErc20IfNeeded = require("../common").approveErc20IfNeeded;
+const getCurrentAccountAddress = require("../common").getCurrentAccountAddress;
+const getPendingTrxCallback = require("../common").getPendingTrxCallback;
+const getTrxOverrides = require("../common").getTrxOverrides;
+const getNetwork = require("../common").getNetwork;
+const getWeb3 = require("../common").getWeb3;
+const erc20Abi = require("../common").erc20Abi;
+const denormalizeAmount = require("../common").denormalizeAmount;
+const processWeb3OrNetworkArgument = require("../common").processWeb3OrNetworkArgument;
+const BigNumber = require("bignumber.js");
+const swapAbi = require("./swap.abi.json");
+const compoundApi = require("../compound");
 
 const GAS_LIMIT = 250000;
 // Deposit to Curve can take 560000+ gas (on ganache at least)
@@ -20,7 +18,7 @@ const FEE = 0.0002;
 const DEFAULT_MAX_SLIPPAGE = 0.01;
 const PENDING_CALLBACK_PLATFORM = "curve";
 
-export const addresses = {
+ const addresses = {
   assets: {
     DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
     USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -33,7 +31,7 @@ export const addresses = {
 
 const swapTokenSymbol = "cDAI+cUSDC";
 
-export const isSupportedNetwork = async (web3OrNetwork) => {
+ const isSupportedNetwork = async (web3OrNetwork) => {
   const network = await processWeb3OrNetworkArgument(web3OrNetwork);
   return network.name === "mainnet";
 };
@@ -44,7 +42,7 @@ const assertSupportedChain = async (network) => {
   }
 };
 
-export const addLiquidity = async (
+ const addLiquidity = async (
   assetA,
   assetAAmount,
   assetB,
@@ -183,7 +181,7 @@ export const addLiquidity = async (
     );
 };
 
-export const getAccountLiquidityAll = async (accountAddress = null) => {
+ const getAccountLiquidityAll = async (accountAddress = null) => {
   const web3 = await getWeb3();
 
   if (!accountAddress) {
@@ -280,7 +278,7 @@ export const getAccountLiquidityAll = async (accountAddress = null) => {
   ];
 };
 
-export const removeLiquidity = async (
+ const removeLiquidity = async (
   assetA,
   assetB,
   percent,
@@ -382,10 +380,20 @@ export const removeLiquidity = async (
     );
 };
 
-export const getSupportedAssets = async () => {
+ const getSupportedAssets = async () => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   await assertSupportedChain(network);
 
   return addresses.assets;
 };
+
+module.exports={
+  addresses,
+  isSupportedNetwork,
+  addLiquidity,
+  getAccountLiquidityAll,
+  removeLiquidity,
+  getSupportedAssets
+  
+}

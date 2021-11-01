@@ -1,13 +1,14 @@
-import WalletConnectProvider from "@walletconnect/web3-provider";
-import BigNumber from "bignumber.js";
-import Web3 from "web3";
-import { networkNames } from "./constants";
-import Erc20Abi from "./erc20.abi.json";
-import { WalletProviderId } from "../../constants";
-import { loadMetamaskEvents, loadWalletConnectEvents } from "./web3Events";
-import { isMobile } from "../../utils";
+const WalletConnectProvider = require("@walletconnect/web3-provider");
+const BigNumber = require("bignumber.js");
+const Web3 = require("web3");
+const networkNames = require("./constants").networkNames;
+const Erc20Abi = require("./erc20.abi.json");
+const WalletProviderId = require("../../constants").WalletProviderId;
+const loadMetamaskEvents = require("./web3Events").loadMetamaskEvents;
+const loadWalletConnectEvents = require("./web3Events").loadWalletConnectEvents;
+const isMobile = require("../../utils").isMobile;
 
-export const createWeb3InNodeJS = () => {
+const createWeb3InNodeJS = () => {
   const ethereumNodeUrl = process.env.ETHEREUM_HTTP_PROVIDER;
   if (!ethereumNodeUrl) {
     throw new Error("ETHEREUM_HTTP_PROVIDER is not specified!");
@@ -25,7 +26,7 @@ export const createWeb3InNodeJS = () => {
   return web3;
 };
 
-export async function createInfuraWeb3() {
+async function createInfuraWeb3() {
   const infuraKey = process.env.REACT_APP_INFURA_KEY;
   if (!infuraKey) {
     throw new Error("REACT_APP_INFURA_KEY is not specified!");
@@ -35,7 +36,7 @@ export async function createInfuraWeb3() {
   return new Web3(infuraUrl);
 }
 
-export async function createMetamaskWeb3() {
+async function createMetamaskWeb3() {
   if (!window.ethereum) {
     throw new Error("There is no 'window.ethereum'. Do you have MetaMask?");
   }
@@ -51,7 +52,7 @@ export async function createMetamaskWeb3() {
   return web3;
 }
 
-export async function createWalletConnectWeb3() {
+async function createWalletConnectWeb3() {
   const provider = new WalletConnectProvider({
     infuraId: process.env.REACT_APP_INFURA_KEY,
   });
@@ -153,7 +154,7 @@ async function creatSelfKeyWeb3() {
   });
 }
 
-export const createWeb3InBrowser = (providerId) => {
+const createWeb3InBrowser = (providerId) => {
   if (providerId === WalletProviderId.Infura) {
     return createInfuraWeb3();
   }
@@ -176,7 +177,8 @@ export const createWeb3InBrowser = (providerId) => {
 let _web3 = null;
 let _providerId = null;
 let _providerLibrary = null;
-export const getWeb3 = async (providerId, init, library, account) => {
+
+const getWeb3 = async (providerId, init, library, account) => {
   if (library || _providerLibrary) {
     if (library) {
       library.eth.defaultAccount = account;
@@ -206,13 +208,13 @@ export const getWeb3 = async (providerId, init, library, account) => {
   }
 };
 
-export const resetWeb3 = () => {
+const resetWeb3 = () => {
   _web3 = null;
   _providerLibrary = null;
   resetNetwork();
 };
 
-export const approveErc20IfNeeded = async (
+const approveErc20IfNeeded = async (
   web3,
   assetAddress,
   receiver,
@@ -276,7 +278,7 @@ export const approveErc20IfNeeded = async (
 
 let _network = null;
 
-export const getNetwork = async (web3) => {
+const getNetwork = async (web3) => {
   if (_network) {
     return _network;
   }
@@ -303,11 +305,11 @@ export const getNetwork = async (web3) => {
   return _network;
 };
 
-export const resetNetwork = () => {
+const resetNetwork = () => {
   _network = null;
 };
 
-export const getTrxOverrides = (options) => {
+const getTrxOverrides = (options) => {
   const overrides = {};
   if (options.gasPrice !== undefined) overrides.gasPrice = options.gasPrice;
   if (options.nonce !== undefined) overrides.nonce = options.nonce;
@@ -315,7 +317,7 @@ export const getTrxOverrides = (options) => {
   return overrides;
 };
 
-export const promisifyBatchRequest = (batch, requestFn, params = {}) => {
+const  promisifyBatchRequest = (batch, requestFn, params = {}) => {
   return new Promise((resolve, reject) => {
     const req = requestFn(params, (error, result) => {
       if (error) {
@@ -328,10 +330,10 @@ export const promisifyBatchRequest = (batch, requestFn, params = {}) => {
   });
 };
 
-export const REQUEST_TYPE_CALL = "call";
-export const REQUEST_TYPE_SEND = "send";
+const REQUEST_TYPE_CALL = "call";
+const REQUEST_TYPE_SEND = "send";
 
-export const web3BatchRequest = (
+const web3BatchRequest = (
   web3,
   method,
   reqType,
@@ -359,9 +361,9 @@ export const web3BatchRequest = (
   );
 };
 
-export const getCurrentAccountAddress = (web3) => web3.eth.defaultAccount;
+const getCurrentAccountAddress = (web3) => web3.eth.defaultAccount;
 
-export const getPendingTrxCallback = (callback, trxProperties) => {
+const getPendingTrxCallback = (callback, trxProperties) => {
   if (!callback) {
     // We need to provide any function as callback or web3 will fail with:
     // Error: "No 'from' address specified..."
@@ -377,3 +379,21 @@ export const getPendingTrxCallback = (callback, trxProperties) => {
     }
   };
 };
+
+module.exports={
+  createWeb3InNodeJS,
+  createInfuraWeb3,
+  createMetamaskWeb3,
+  createWalletConnectWeb3,
+  createWeb3InBrowser,
+  getWeb3,
+  resetWeb3,
+  approveErc20IfNeeded,
+  getNetwork,
+  resetNetwork,
+  getTrxOverrides,
+  promisifyBatchRequest,
+  web3BatchRequest,
+  getCurrentAccountAddress,
+  getPendingTrxCallback
+}

@@ -1,4 +1,4 @@
-export const contractAddresses = {
+ const contractAddresses = {
   mainnet: {
     RewardPool: "0x087B5469CFf15Ad8Cdb433500a527BD45b65cDe7",
     KEYFIUSDCLP: "0xb99c23a9a444ebeb0ce4a67f27dab8d4826b1108",
@@ -24,7 +24,7 @@ export const contractAddresses = {
   },
 };
 
-export const contractAddressesv2 = {
+ const contractAddressesv2 = {
   mainnet: {
     RewardPool: "0x1a9b2708b76E55354146576AD0A7e46CF7E8abbC",
     KEYFI: "0xb8647e90c0645152fccf4d9abb6b59eb4aa99052",
@@ -34,3 +34,9 @@ export const contractAddressesv2 = {
     WBTC: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
   },
 };
+
+
+module.exports={
+  contractAddresses,
+  contractAddressesv2
+}

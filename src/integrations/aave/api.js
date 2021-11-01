@@ -1,28 +1,24 @@
-import LendingPoolAbi from "./abi/LendingPool.abi.json";
-import ATokenAbi from "./abi/AToken.abi.json";
-import PriceOracleABI from "./abi/PriceOraclev2.abi.json";
-import {
-  getContractAddress,
-  getReserves,
-  isSupportedNetwork,
-} from "./constants/address";
-import {
-  approveErc20IfNeeded,
-  denormalizeAmount,
-  getCurrentAccountAddress,
-  getPendingTrxCallback,
-  getNetwork,
-  getWeb3,
-  normalizeAmount,
-  promisifyBatchRequest,
-} from "../common";
-import BigNumber from "bignumber.js";
-import axios from "axios";
+const getContractAddress = require("./constants/address").getContractAddress;
+const getReserves = require("./constants/address").getReserves;
+const isSupportedNetwork = require("./constants/address").isSupportedNetwork;
+const approveErc20IfNeeded = require("../common").approveErc20IfNeeded;
+const denormalizeAmount = require("../common").denormalizeAmount;
+const getCurrentAccountAddress = require("../common").getCurrentAccountAddress;
+const getPendingTrxCallback = require("../common").getPendingTrxCallback;
+const getNetwork = require("../common").getNetwork;
+const getWeb3 = require("../common").getWeb3;
+const normalizeAmount = require("../common").normalizeAmount;
+const promisifyBatchRequest = require("../common").promisifyBatchRequest;
+const LendingPoolAbi = require("./abi/LendingPool.abi.json");
+const ATokenAbi = require("./abi/AToken.abi.json");
+const PriceOracleABI = require("./abi/PriceOraclev2.abi.json");
+const BigNumber = require("bignumber.js");
+const axios = require("axios");
 
 const GAS_LIMIT = 750000;
 const PENDING_CALLBACK_PLATFORM = "aave";
 
-export const getLendingPoolContract = async (web3) => {
+ const getLendingPoolContract = async (web3) => {
   const lpAddress = await getContractAddress(web3, "LendingPool");
   return new web3.eth.Contract(LendingPoolAbi, lpAddress);
 };
@@ -34,16 +30,16 @@ const getTrxOverrides = async (options) => {
   };
 };
 
-export async function getAddress(contractName) {
+ async function getAddress(contractName) {
   return getContractAddress(await getWeb3(), contractName);
 }
 
-export const getSupportedAssets = async () => {
+ const getSupportedAssets = async () => {
   const web3 = await getWeb3();
   return Object.keys(await getReserves(web3));
 };
 
-export async function deposit(asset, amount, options = {}) {
+ async function deposit(asset, amount, options = {}) {
   const referralCode = options.referralCode || "0";
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
@@ -125,7 +121,7 @@ export async function deposit(asset, amount, options = {}) {
   }
 }
 
-export async function withdraw(asset, amount, options = {}) {
+ async function withdraw(asset, amount, options = {}) {
   asset = asset === "WETH" ? "ETH" : asset;
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
@@ -158,7 +154,7 @@ export async function withdraw(asset, amount, options = {}) {
   );
 }
 
-export async function borrow(asset, amount, options = {}) {
+ async function borrow(asset, amount, options = {}) {
   const interestRateMode = options.interestRateMode || "2";
   const referralCode = options.referralCode || "0";
   const web3 = await getWeb3();
@@ -195,7 +191,7 @@ export async function borrow(asset, amount, options = {}) {
     );
 }
 
-export async function repay(asset, amount, options = {}) {
+ async function repay(asset, amount, options = {}) {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const assetAddress = await this.getAddress(asset);
@@ -280,7 +276,7 @@ export async function repay(asset, amount, options = {}) {
   }
 }
 
-export async function getUserReserveData(asset) {
+ async function getUserReserveData(asset) {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const assetAddress = await getAddress(asset);
@@ -313,7 +309,7 @@ export async function getUserReserveData(asset) {
   };
 }
 
-export const getBorrowAssets = async () => {
+ const getBorrowAssets = async () => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
 
@@ -394,7 +390,7 @@ export const getBorrowAssets = async () => {
   }));
 };
 
-export const getAssetHistoricalAPY = async (asset) => {
+ const getAssetHistoricalAPY = async (asset) => {
   const web3 = await getWeb3();
 
   if (!asset) {
@@ -472,7 +468,7 @@ export const getAssetHistoricalAPY = async (asset) => {
   }
 };
 
-export const getBorrowedBalance = async (address = null) => {
+ const getBorrowedBalance = async (address = null) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
 
@@ -521,7 +517,7 @@ export const getBorrowedBalance = async (address = null) => {
   return borrowBalance;
 };
 
-export async function getBalance(address = null) {
+ async function getBalance(address = null) {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
 
@@ -561,7 +557,7 @@ export async function getBalance(address = null) {
   return balance;
 }
 
-export async function getUserAccountData(address = null) {
+ async function getUserAccountData(address = null) {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
 
@@ -600,7 +596,7 @@ export async function getUserAccountData(address = null) {
   };
 }
 
-export const estimateHealthFactor = (
+ const estimateHealthFactor = (
   assetData,
   amount,
   userData,
@@ -622,3 +618,21 @@ export const estimateHealthFactor = (
     .dividedBy(Math.max(0, BigNumber(totalDebtETH).minus(amount * priceETH)))
     .toFixed();
 };
+
+
+module.exports={
+  getLendingPoolContract,
+  getAddress,
+  getSupportedAssets,
+  deposit,
+  withdraw,
+  borrow,
+  repay,
+  getUserReserveData,
+  getBorrowAssets,
+  getAssetHistoricalAPY,
+  getBorrowedBalance,
+  getBalance,
+  getUserAccountData,
+  estimateHealthFactor
+}

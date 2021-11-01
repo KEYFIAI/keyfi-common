@@ -1,9 +1,10 @@
-import axios from "axios";
-import { getCurrentAccountAddress, getWeb3 } from "../common";
+const axios = require("axios");
+const getCurrentAccountAddress = require("../common").getCurrentAccountAddress;
+const getWeb3 = require("../common").getWeb3;
 
 const ALKEMI_URL = "https://api.alkemi.network";
 
-export const getAccount = async (accountAddress, options = {}) => {
+ const getAccount = async (accountAddress, options = {}) => {
   if (!accountAddress) {
     const web3 = options.web3 ? options.web3 : await getWeb3();
     accountAddress = getCurrentAccountAddress(web3);
@@ -20,7 +21,7 @@ export const getAccount = async (accountAddress, options = {}) => {
   return res.data;
 };
 
-export const getBorrowed = async (accountAddress, options = {}) => {
+ const getBorrowed = async (accountAddress, options = {}) => {
   if (!accountAddress) {
     const web3 = options.web3 ? options.web3 : await getWeb3();
     accountAddress = getCurrentAccountAddress(web3);
@@ -30,7 +31,7 @@ export const getBorrowed = async (accountAddress, options = {}) => {
   return account.borrow;
 };
 
-export const getSupply = async (accountAddress, options = {}) => {
+ const getSupply = async (accountAddress, options = {}) => {
   if (!accountAddress) {
     const web3 = options.web3 ? options.web3 : await getWeb3();
     accountAddress = getCurrentAccountAddress(web3);
@@ -46,3 +47,9 @@ export const getSupply = async (accountAddress, options = {}) => {
 
   return supplyBalance;
 };
+
+module.exports={
+  getAccount,
+  getBorrowed,
+  getSupply
+}

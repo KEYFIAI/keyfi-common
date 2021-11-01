@@ -1411,7 +1411,12 @@ const supportedPairs = [
   },
 ];
 
-export const PAIR_NOT_EXISTS = "PAIR_NOT_EXISTS";
-export const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
+ const PAIR_NOT_EXISTS = "PAIR_NOT_EXISTS";
+ const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-export { contractAddresses, supportedPairs };
+ module.exports={
+  contractAddresses,
+  supportedPairs,
+  PAIR_NOT_EXISTS,
+  NULL_ADDRESS
+ }

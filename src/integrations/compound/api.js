@@ -1,40 +1,40 @@
-import BigNumber from "bignumber.js";
-import cErc20Abi from "./abi/cErc20.abi.json";
-import cEther from "./abi/cEther.abi.json";
-import comptrollerAbi from "./abi/comptroller.abi.json";
-import erc20Abi from "./abi/erc20.abi.json";
-import UniswapAnchoredViewAbi from "./abi/UniswapAnchoredView.json";
-import { contractAddresses, cTokens, supportedAssets } from "./constants";
-import {
-  approveErc20IfNeeded,
-  getBalanceEth,
-  getBalanceErc20,
-  getCurrentAccountAddress,
-  getNetwork,
-  getPendingTrxCallback,
-  getTrxOverrides,
-  getWeb3,
-  normalizeAmount,
-  denormalizeAmount,
-  processWeb3OrNetworkArgument,
-} from "../common";
-import axios from "axios";
+const approveErc20IfNeeded = require("../common").approveErc20IfNeeded;
+const getBalanceEth = require("../common").getBalanceEth;
+const getBalanceErc20 = require("../common").getBalanceErc20;
+const getCurrentAccountAddress = require("../common").getCurrentAccountAddress;
+const getNetwork = require("../common").getNetwork;
+const getPendingTrxCallback = require("../common").getPendingTrxCallback;
+const getTrxOverrides = require("../common").getTrxOverrides;
+const getWeb3 = require("../common").getWeb3;
+const normalizeAmount = require("../common").normalizeAmount;
+const denormalizeAmount = require("../common").denormalizeAmount;
+const processWeb3OrNetworkArgument = require("../common").processWeb3OrNetworkArgument;
+const BigNumber = require("bignumber.js");
+const cErc20Abi = require("./abi/cErc20.abi.json");
+const cEther = require("./abi/cEther.abi.json");
+const comptrollerAbi = require("./abi/comptroller.abi.json");
+const erc20Abi = require("./abi/erc20.abi.json");
+const UniswapAnchoredViewAbi = require("./abi/UniswapAnchoredView.json");
+const contractAddresses = require("./constants").contractAddresses;
+const cTokens = require("./constants").cTokens;
+const supportedAssets = require("./constants").supportedAssets;
+const axios = require("axios");
 
 const GAS_LIMIT = 250000;
 // Deposit of DAI can took 320000+ of gas
 const GAS_LIMIT_DEPOSIT = 400000;
 const PENDING_CALLBACK_PLATFORM = "compound";
 
-export const EXCHANGE_RATE_DECIMALS = 18;
+ const EXCHANGE_RATE_DECIMALS = 18;
 
-export { cErc20Abi };
+ { cErc20Abi };
 
-export const isSupportedNetwork = async (web3OrNetwork) => {
+ const isSupportedNetwork = async (web3OrNetwork) => {
   const network = await processWeb3OrNetworkArgument(web3OrNetwork);
   return Boolean(contractAddresses[network.name]);
 };
 
-export const getContractAddress = async (
+ const getContractAddress = async (
   web3,
   contractName,
   specificNetwork = null
@@ -59,9 +59,9 @@ export const getContractAddress = async (
   return address;
 };
 
-export const getSupportedAssets = () => supportedAssets;
+ const getSupportedAssets = () => supportedAssets;
 
-export const getBalance = async (accountAddress = null, options = {}) => {
+ const getBalance = async (accountAddress = null, options = {}) => {
   const web3 = await getWeb3();
 
   if (!(await isSupportedNetwork(web3))) {
@@ -108,7 +108,7 @@ export const getBalance = async (accountAddress = null, options = {}) => {
   return balance;
 };
 
-export const getUserAccountData = async (address = null) => {
+ const getUserAccountData = async (address = null) => {
   const web3 = await getWeb3();
 
   if (!address) {
@@ -152,7 +152,7 @@ export const getUserAccountData = async (address = null) => {
   if (userAccount) {
     return {
       availableBorrowsETH,
-      healthFactor: userAccount.health.value || 0,
+      healthFactor: userAccount.health.value,
       totalCollateralETH: userAccount.total_borrow_value_in_eth.value,
       totalDebtETH: userAccount.total_borrow_value_in_eth.value,
     };
@@ -165,7 +165,7 @@ export const getUserAccountData = async (address = null) => {
   };
 };
 
-export const getETHPrice = async () => {
+ const getETHPrice = async () => {
   const web3 = await getWeb3();
 
   // Get ETH Price to get availableBorrowsETH
@@ -183,7 +183,7 @@ export const getETHPrice = async () => {
   return BigNumber(ETHPrice).shiftedBy(-6).toFixed();
 };
 
-export const deposit = async (asset, amount, options = {}) => {
+ const deposit = async (asset, amount, options = {}) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
@@ -270,7 +270,7 @@ export const deposit = async (asset, amount, options = {}) => {
   }
 };
 
-export const withdraw = async (asset, amount, options = {}) => {
+ const withdraw = async (asset, amount, options = {}) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
@@ -307,7 +307,7 @@ export const withdraw = async (asset, amount, options = {}) => {
   );
 };
 
-export const enableCollateral = async (address, asset) => {
+ const enableCollateral = async (address, asset) => {
   if (!asset) {
     throw new Error("Asset hasn't been provided");
   }
@@ -327,7 +327,7 @@ export const enableCollateral = async (address, asset) => {
     .send({ from: address });
 };
 
-export const getAccountLiquidity = async (address = null) => {
+ const getAccountLiquidity = async (address = null) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
 
@@ -356,7 +356,7 @@ export const getAccountLiquidity = async (address = null) => {
   };
 };
 
-export const borrow = async (asset, amount, options = {}) => {
+ const borrow = async (asset, amount, options = {}) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
@@ -405,7 +405,7 @@ export const borrow = async (asset, amount, options = {}) => {
   return balance;
 };
 
-export const getBorrowAssets = async () => {
+ const getBorrowAssets = async () => {
   const web3 = await getWeb3();
 
   try {
@@ -434,7 +434,7 @@ export const getBorrowAssets = async () => {
   }
 };
 
-export const getAssetHistoricalAPY = async (asset) => {
+ const getAssetHistoricalAPY = async (asset) => {
   const web3 = await getWeb3();
   if (!asset) {
     throw new Error("Missing asset");
@@ -466,7 +466,7 @@ export const getAssetHistoricalAPY = async (asset) => {
   }
 };
 
-export const getBorrowedBalance = async (address = null, options = {}) => {
+ const getBorrowedBalance = async (address = null, options = {}) => {
   try {
     const web3 = await getWeb3();
     const network = await getNetwork(web3);
@@ -514,7 +514,7 @@ export const getBorrowedBalance = async (address = null, options = {}) => {
   }
 };
 
-export const borrowBalance = async (asset, address = null) => {
+ const borrowBalance = async (asset, address = null) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
 
@@ -535,7 +535,7 @@ export const borrowBalance = async (asset, address = null) => {
   };
 };
 
-export const repay = async (asset, amount, address, options = {}) => {
+ const repay = async (asset, amount, address, options = {}) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
@@ -573,7 +573,7 @@ export const repay = async (asset, amount, address, options = {}) => {
   });
 };
 
-export const getExchangeRate = async (cTokenSymbol) => {
+ const getExchangeRate = async (cTokenSymbol) => {
   if (!cTokenSymbol.startsWith("c")) {
     throw new Error(`'${cTokenSymbol}' is not cToken`);
   }
@@ -589,7 +589,7 @@ export const getExchangeRate = async (cTokenSymbol) => {
   return cTokenContract.methods.exchangeRateCurrent().call();
 };
 
-export const estimateHealthFactor = (
+ const estimateHealthFactor = (
   assetData,
   amount,
   userData,
@@ -608,3 +608,24 @@ export const estimateHealthFactor = (
     .dividedBy(BigNumber(totalDebtETH).minus(amount * priceETH))
     .toFixed();
 };
+
+module.exports={
+  isSupportedNetwork,
+  getContractAddress,
+  getSupportedAssets,
+  getBalance,
+  getUserAccountData,
+  getETHPrice,
+  deposit,
+  withdraw,
+  enableCollateral,
+  getAccountLiquidity,
+  borrow,
+  getBorrowAssets,
+  getAssetHistoricalAPY,
+  getBorrowedBalance,
+  borrowBalance,
+  repay,
+  getExchangeRate,
+  estimateHealthFactor
+}

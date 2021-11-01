@@ -1,2 +1,8 @@
-export * from "./api";
-export * from "./v2";
+const api = require("./api");
+const apiv2 = require("./v2");
+
+module.exports={
+    api,
+    apiv2
+}
+

@@ -164,4 +164,4 @@ const supportedAssets = [
   "ZRX",
 ];
 
-export { contractAddresses, cTokens, supportedAssets };
+module.exports= { contractAddresses, cTokens, supportedAssets };

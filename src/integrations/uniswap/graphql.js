@@ -1,4 +1,4 @@
-export const userLiquidityQuery = `{
+exports.userLiquidityQuery = `{
   user(id: "$ACCOUNT_ADDRESS") {
     liquidityPositions {
       liquidityTokenBalance
@@ -16,3 +16,5 @@ export const userLiquidityQuery = `{
     }
   }
 }`;
+
+

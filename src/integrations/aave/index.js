@@ -1,4 +1,11 @@
-export * from "./api";
-export * as v1 from "./api";
-export * as v2 from "./v2";
-export { isSupportedNetwork } from "./constants/address";
+const api = require("./api")
+const apiv1 = require("./api")
+const apiv2 = require("./v2")
+const isSupportedNetwork = require("./constants/address")
+
+module.exports={
+    api,
+    apiv1,
+    apiv2,
+    isSupportedNetwork
+}

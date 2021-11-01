@@ -1,17 +1,15 @@
-import whitelistAbi from "./whitelist.abi.json";
-import {
-  getCurrentAccountAddress,
-  getNetwork,
-  getWeb3,
-  processWeb3OrNetworkArgument
-} from "../common";
+const getCurrentAccountAddress = require("../common").getCurrentAccountAddress;
+const getNetwork = require("../common").getNetwork;
+const getWeb3 = require("../common").getWeb3;
+const processWeb3OrNetworkArgument = require("../common").processWeb3OrNetworkArgument;
+const whitelistAbi = require("./whitelist.abi.json");
 
 const whitelistAddresses = {
   "mainnet": "0xc3faa8e87cD7b3678FA10C0F9638Eb4BA7DA20C5",
   "ropsten": "0xa40fC5a9232868B0b681B9C34F3081be32368ad3",
 };
 
-export const isSupportedNetwork = async (web3OrNetwork) => {
+ const isSupportedNetwork = async (web3OrNetwork) => {
   const network = await processWeb3OrNetworkArgument(web3OrNetwork);
   return Boolean(whitelistAddresses[network.name]);
 };
@@ -27,7 +25,7 @@ const getWhitelistAddress = async (web3) => {
   return address;
 };
 
-export const isWhitelisted = async (address = null) => {
+ const isWhitelisted = async (address = null) => {
   const web3 = await getWeb3();
 
   if (!address) {
@@ -38,3 +36,9 @@ export const isWhitelisted = async (address = null) => {
   const contract = new web3.eth.Contract(whitelistAbi, contractAddress);
   return contract.methods.isWhitelisted(address).call();
 };
+
+
+module.exports={
+  isSupportedNetwork,
+  isWhitelisted
+}

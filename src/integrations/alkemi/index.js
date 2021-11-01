@@ -1,1 +1,3 @@
-export * from "./api.js";
+
+exports.api = require("./api.js")
+

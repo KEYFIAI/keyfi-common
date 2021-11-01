@@ -1,7 +1,7 @@
 const universalRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 const universalFactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
 
-export const contractAddresses = {
+ const contractAddresses = {
   mainnet: {
     Router02: universalRouterAddress,
     Factory: universalFactoryAddress,
@@ -18,10 +18,10 @@ export const contractAddresses = {
   },
 };
 
-export const uniswapContracts = ["Router02", "Factory"];
+ const uniswapContracts = ["Router02", "Factory"];
 
 // Actual on 2020.03.04
-export const availablePairs = {
+ const availablePairs = {
   mainnet: [
     {
       assetA: "DAI",
@@ -1667,5 +1667,14 @@ export const availablePairs = {
   ],
 };
 
-export const PAIR_NOT_EXISTS = "PAIR_NOT_EXISTS";
-export const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
+ const PAIR_NOT_EXISTS = "PAIR_NOT_EXISTS";
+ const NULL_ADDREESS = "0x0000000000000000000000000000000000000000";
+
+
+module.exports={
+  contractAddresses,
+  uniswapContracts,
+  availablePairs,
+  PAIR_NOT_EXISTS,
+  NULL_ADDREESS
+}

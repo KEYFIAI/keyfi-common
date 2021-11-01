@@ -1,3 +1,8 @@
-export * from './api';
-export { supportedAssets } from './constants';
 
+const api = require('./api')
+const supported = require("./constants")
+
+module.exports={
+    api,
+    supported
+}

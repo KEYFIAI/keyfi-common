@@ -1,5 +1,5 @@
-import ENS from 'ethereum-ens';
-import { getWeb3 } from "./web3";
+const ENS = require('ethereum-ens');
+const getWeb3 = require("./web3").getWeb3;
 
 let ensProvider = null;
 const getEnsProvider = async () => {
@@ -11,7 +11,11 @@ const getEnsProvider = async () => {
   return ensProvider;
 };
 
-export const resolveEns = async (ensAddress) => {
+const resolveEns = async (ensAddress) => {
   const ens = await getEnsProvider();
   return ens.resolver(ensAddress).addr();
 };
+
+module.exports={
+  resolveEns
+}

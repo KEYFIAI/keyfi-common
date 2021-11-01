@@ -1,4 +1,4 @@
-export function parseJson(json, defaultValue) {
+ const parseJson = (json, defaultValue)=> {
   try {
     return JSON.parse(json);
   } catch (err) {
@@ -6,7 +6,7 @@ export function parseJson(json, defaultValue) {
   }
 }
 
-export function isMobile() {
+ const isMobile= () =>{
   let check = false;
   (function (a) {
     if (
@@ -20,4 +20,9 @@ export function isMobile() {
       check = true;
   })(navigator.userAgent || navigator.vendor || window.opera);
   return check;
+}
+
+module.exports ={
+  parseJson,
+  isMobile
 }

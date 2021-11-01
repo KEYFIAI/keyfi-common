@@ -1,23 +1,23 @@
-import BigNumber from "bignumber.js";
-import routerAbi from "./abi/router.abi.json";
-import factoryAbi from "./abi/factoryAbi.abi.json";
-import pairAbi from "./abi/pair.abi.json";
-import {
-  denormalizeAmount,
-  normalizeAmount,
-  getNetwork,
-  getWeb3,
-  processWeb3OrNetworkArgument,
-  getCurrentAccountAddress,
-  approveErc20IfNeeded,
-  getPendingTrxCallback,
-  getTrxOverrides,
-  makeBatchRequest,
-  promisifyBatchRequest,
-} from "../common";
-import { contractAddresses, supportedPairs } from "./constants";
-import { erc20Addresses } from "../common/constants";
-import { NULL_ADDRESS, PAIR_NOT_EXISTS } from "./constants";
+const denormalizeAmount = require("../common").denormalizeAmount;
+const normalizeAmount = require("../common").normalizeAmount;
+const getNetwork = require("../common").getNetwork;
+const getWeb3 = require("../common").getWeb3;
+const processWeb3OrNetworkArgument = require("../common").processWeb3OrNetworkArgument;
+const getCurrentAccountAddress = require("../common").getCurrentAccountAddress;
+const approveErc20IfNeeded = require("../common").approveErc20IfNeeded;
+const getPendingTrxCallback = require("../common").getPendingTrxCallback;
+const getTrxOverrides = require("../common").getTrxOverrides;
+const makeBatchRequest = require("../common").makeBatchRequest;
+const promisifyBatchRequest = require("../common").promisifyBatchRequest;
+const BigNumber = require("bignumber.js");
+const routerAbi = require("./abi/router.abi.json");
+const factoryAbi = require("./abi/factoryAbi.abi.json");
+const pairAbi = require("./abi/pair.abi.json");
+const contractAddresses = require("./constants").contractAddresses;
+const supportedPairs = require("./constants").supportedPairs;
+const erc20Addresses = require("../common/constants").erc20Addresses;
+const NULL_ADDRESS = require("./constants").NULL_ADDRESS;
+const PAIR_NOT_EXISTS = require("./constants").PAIR_NOT_EXISTS;
 
 const DEFAULT_MAX_SLIPPAGE = 0.005;
 const GAS_LIMIT = 300000;
@@ -30,12 +30,12 @@ const calculateMinAmount = (amount, slippage) =>
 
 const getDefaultDeadline = () => Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
 
-export const isSupportedNetwork = async (web3OrNetwork) => {
+ const isSupportedNetwork = async (web3OrNetwork) => {
   const network = await processWeb3OrNetworkArgument(web3OrNetwork);
   return Boolean(contractAddresses[network.name]);
 };
 
-export const getContractAddress = async (web3, contractName) => {
+ const getContractAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
 
   if (!(await isSupportedNetwork(network))) {
@@ -67,7 +67,7 @@ const getAssetAddress = async (web3, asset) => {
   return getContractAddress(web3, asset);
 };
 
-export const getPairAddress = async (web3, assetAAddress, assetBAddress) => {
+ const getPairAddress = async (web3, assetAAddress, assetBAddress) => {
   const factoryAddress = await getContractAddress(web3, "Factory");
   const factoryContract = new web3.eth.Contract(factoryAbi, factoryAddress);
   const pairAddress = await factoryContract.methods
@@ -83,7 +83,7 @@ export const getPairAddress = async (web3, assetAAddress, assetBAddress) => {
   return pairAddress;
 };
 
-export const isPairAvailable = async (assetA, assetB) => {
+ const isPairAvailable = async (assetA, assetB) => {
   assetA = assetA === "BNB" ? "WBNB" : assetA;
   assetB = assetB === "BNB" ? "WBNB" : assetB;
 
@@ -102,7 +102,7 @@ export const isPairAvailable = async (assetA, assetB) => {
   );
 };
 
-export const getAvailablePairedAssets = async (mainAsset) => {
+ const getAvailablePairedAssets = async (mainAsset) => {
   mainAsset = mainAsset === "BNB" ? "WBNB" : mainAsset;
 
   const web3 = await getWeb3();
@@ -132,7 +132,7 @@ export const getAvailablePairedAssets = async (mainAsset) => {
 
 const MAXIMUM_ROUTE_LENGTH = 4;
 
-export const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
+ const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
   if (fromAssetSymbol === toAssetSymbol) {
     throw new Error(`${fromAssetSymbol} and ${toAssetSymbol} are the same`);
   }
@@ -176,7 +176,7 @@ export const findRoute = async (fromAssetSymbol, toAssetSymbol) => {
   return neededRoute;
 };
 
-export const estimateSwap = async (
+ const estimateSwap = async (
   fromAssetSymbol,
   amount,
   toAssetSymbol,
@@ -249,7 +249,7 @@ export const estimateSwap = async (
   };
 };
 
-export const swap = async (
+ const swap = async (
   fromAssetSymbol,
   fromAmount,
   toAssetSymbol,
@@ -366,7 +366,7 @@ export const swap = async (
   );
 };
 
-export const getLiquidity = async (assetA, assetB, options = {}) => {
+ const getLiquidity = async (assetA, assetB, options = {}) => {
   const web3 = await getWeb3();
 
   let assetAAddress = await getAssetAddress(web3, assetA);
@@ -400,7 +400,7 @@ export const getLiquidity = async (assetA, assetB, options = {}) => {
   };
 };
 
-export const getPrice = async (
+ const getPrice = async (
   assetWhat,
   assetTo,
   assetWhatBalance,
@@ -424,7 +424,7 @@ export const getPrice = async (
   };
 };
 
-export const getAccountLiquidity = async (
+ const getAccountLiquidity = async (
   assetA,
   assetB,
   address = null,
@@ -485,7 +485,7 @@ export const getAccountLiquidity = async (
   };
 };
 
-export const getAccountLiquidityAll = async (address = null, options = {}) => {
+ const getAccountLiquidityAll = async (address = null, options = {}) => {
   try {
     const web3 = await getWeb3();
 
@@ -619,7 +619,8 @@ export const getAccountLiquidityAll = async (address = null, options = {}) => {
     return [];
   }
 };
-export const addLiquidity = async (
+
+ const addLiquidity = async (
   assetA,
   assetAAmount,
   assetB,
@@ -770,7 +771,7 @@ export const addLiquidity = async (
 };
 
 // Percent is a float number in range of 0-1
-export const removeLiquidity = async (
+ const removeLiquidity = async (
   assetA,
   assetB,
   percent,
@@ -927,8 +928,27 @@ const getSupportedAssetsMapUnfiltered = async () => {
   throw new Error("ApeSwap only support BSC");
 };
 
-export const getSupportedAssets = async () => {
+ const getSupportedAssets = async () => {
   return Object.keys(await getSupportedAssetsMapUnfiltered())
     .filter((asset) => !UNSUPPORTED_ASSETS.includes(asset))
     .concat("BNB");
 };
+
+
+module.exports={
+  isSupportedNetwork,
+  getContractAddress,
+  getPairAddress,
+  isPairAvailable,
+  getAvailablePairedAssets,
+  getContractAddress,
+  findRoute,
+  estimateSwap,
+  swap,
+  getLiquidity,
+  getPrice,
+  getAccountLiquidity,
+  getAccountLiquidityAll,
+  addLiquidity,
+  removeLiquidity,
+}

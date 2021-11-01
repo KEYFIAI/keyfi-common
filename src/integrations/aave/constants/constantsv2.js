@@ -1,7 +1,8 @@
-import { getNetwork, processWeb3OrNetworkArgument } from "../../common";
-import LendingPoolAddressProviderABI from "../abi/LendingPoolAddressesProviderv2.abi.json";
+const getNetwork = require("../../common").getNetwork;
+const processWeb3OrNetworkArgument = require("../../common").processWeb3OrNetworkArgument;
+const LendingPoolAddressProviderABI = require("../abi/LendingPoolAddressesProviderv2.abi.json");
 
-export const addresses = {
+ const addresses = {
   mainnet: {
     ProtocolData: "0x057835Ad21a177dbdd3090bB1CAE03EaCF78Fc6d",
     LendingPoolAddressesProvider: "0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5",
@@ -434,11 +435,11 @@ export const addresses = {
   },
 };
 
-export const getATokenAddress = async (tokenSymbol) => {
+ const getATokenAddress = async (tokenSymbol) => {
   return addresses.mainnet.reserves[tokenSymbol].aTokenAddress;
 };
 
-export const fetchContractDynamicAddress = async (web3, contractName) => {
+ const fetchContractDynamicAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
 
   const addressProviderContract = new web3.eth.Contract(
@@ -455,7 +456,7 @@ export const fetchContractDynamicAddress = async (web3, contractName) => {
   }
 };
 
-export const getContractAddress = async (assetOrContractName, web3) => {
+ const getContractAddress = async (assetOrContractName, web3) => {
   if (addresses.mainnet[assetOrContractName]) {
     return addresses.mainnet[assetOrContractName];
   }
@@ -469,12 +470,12 @@ export const getContractAddress = async (assetOrContractName, web3) => {
   }
 };
 
-export const isSupportedNetwork = async (web3orNetwork) => {
+ const isSupportedNetwork = async (web3orNetwork) => {
   const { name } = await processWeb3OrNetworkArgument(web3orNetwork);
   return Boolean(addresses[name]);
 };
 
-export const getReserves = async (web3) => {
+ const getReserves = async (web3) => {
   const { name } = await getNetwork(web3);
   const networkAddresses = addresses[name];
 
@@ -485,7 +486,7 @@ export const getReserves = async (web3) => {
   return networkAddresses.reserves;
 };
 
-export const getReserveAddress = async (asset) => {
+ const getReserveAddress = async (asset) => {
   asset = asset === "ETH" ? "WETH" : asset;
   const address = addresses.mainnet.reserves[asset].address;
   if (!address) {
@@ -493,3 +494,13 @@ export const getReserveAddress = async (asset) => {
   }
   return address;
 };
+
+module.exports={
+  addresses,
+  getATokenAddress,
+  fetchContractDynamicAddress,
+  getContractAddress,
+  isSupportedNetwork,
+  getReserves,
+  getReserveAddress
+}

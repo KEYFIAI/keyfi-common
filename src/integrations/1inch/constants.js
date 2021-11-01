@@ -38,7 +38,7 @@ const supportedAssets = [
   "sBTC",
 ];
 
-export {
+module.exports={
   contractAddresses,
-  supportedAssets,
-};
+  supportedAssets
+}

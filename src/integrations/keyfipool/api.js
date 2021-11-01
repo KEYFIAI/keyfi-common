@@ -1,30 +1,27 @@
-import BigNumber from "bignumber.js";
-import rewardPoolAbi from "./reward-pool.abi.json";
-import { contractAddresses } from "./constants";
-import {
-  approveErc20IfNeeded,
-  getCurrentAccountAddress,
-  getNetwork,
-  getPendingTrxCallback,
-  getTrxOverrides,
-  getWeb3,
-  normalizeAmount,
-  denormalizeAmount,
-  processWeb3OrNetworkArgument,
-} from "../common";
-import { getAccountLiquidity } from "../uniswap";
-import { getAccountLiquidity as getAccountLiquidityBSC } from "../pancakeswap";
-import { v2 } from "../pancakeswap";
-
+const approveErc20IfNeeded = require("../common").approveErc20IfNeeded;
+const getCurrentAccountAddress = require("../common").getCurrentAccountAddress;
+const getNetwork = require("../common").getNetwork;
+const getPendingTrxCallback = require("../common").getPendingTrxCallback;
+const getTrxOverrides = require("../common").getTrxOverrides;
+const getWeb3 = require("../common").getWeb3;
+const normalizeAmount = require("../common").normalizeAmount;
+const denormalizeAmount = require("../common").denormalizeAmount;
+const processWeb3OrNetworkArgument = require("../common").processWeb3OrNetworkArgument;
+const BigNumber = require("bignumber.js");
+const rewardPoolAbi = require("./reward-pool.abi.json");
+const contractAddresses = require("./constants").contractAddresses;
+const getAccountLiquidity = require("../uniswap").getAccountLiquidity;
+const getAccountLiquidityBSC = require("../pancakeswap").getAccountLiquidity;
+const v2 = require("../pancakeswap").v2;
 const GAS_LIMIT = 250000;
 const PENDING_CALLBACK_PLATFORM = "keyfi rewardpool";
 
-export const isSupportedNetwork = async (web3OrNetwork) => {
+ const isSupportedNetwork = async (web3OrNetwork) => {
   const network = await processWeb3OrNetworkArgument(web3OrNetwork);
   return Boolean(contractAddresses[network.name]);
 };
 
-export const getContractAddress = async (web3, contractName) => {
+ const getContractAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
 
   if (!(await isSupportedNetwork(network))) {
@@ -43,7 +40,7 @@ export const getContractAddress = async (web3, contractName) => {
   return address;
 };
 
-export const getSupportedAssets = async (web3) => {
+ const getSupportedAssets = async (web3) => {
   if (!web3) {
     web3 = await getWeb3();
   }
@@ -60,7 +57,7 @@ export const getSupportedAssets = async (web3) => {
   return Object.keys(addresses).filter((asset) => asset !== "RewardPool");
 };
 
-export const getBalance = async (accountAddress = null, options = {}) => {
+ const getBalance = async (accountAddress = null, options = {}) => {
   const web3 = options.web3 ? options.web3 : await getWeb3();
   const network = await getNetwork(web3);
 
@@ -95,7 +92,7 @@ export const getBalance = async (accountAddress = null, options = {}) => {
  *  getBalance() -> { KEY: 100, KEYFIUSDCLP: 0.001 }
  *  getStaked()  -> { KEY: 100, KEYFI: 200, USDC: 20 }
  */
-export const getStaked = async (accountAddress, onlyForLP = false) => {
+ const getStaked = async (accountAddress, onlyForLP = false) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   let balance = await getBalance(accountAddress, { web3 });
@@ -163,7 +160,7 @@ export const getStaked = async (accountAddress, onlyForLP = false) => {
   return balance;
 };
 
-export const deposit = async (asset, amount, options = {}) => {
+ const deposit = async (asset, amount, options = {}) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
@@ -216,7 +213,7 @@ export const deposit = async (asset, amount, options = {}) => {
   );
 };
 
-export const withdraw = async (asset, amount, options = {}) => {
+ const withdraw = async (asset, amount, options = {}) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const nAmount = normalizeAmount(network, asset, amount);
@@ -246,7 +243,7 @@ export const withdraw = async (asset, amount, options = {}) => {
   );
 };
 
-export const withdrawReward = async (asset, options = {}) => {
+ const withdrawReward = async (asset, options = {}) => {
   const web3 = await getWeb3();
 
   const assetAddress = await getContractAddress(web3, asset);
@@ -294,7 +291,7 @@ export const withdrawReward = async (asset, options = {}) => {
   );
 };
 
-export const getRewards = async (accountAddress = null) => {
+ const getRewards = async (accountAddress = null) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
 
@@ -318,3 +315,16 @@ export const getRewards = async (accountAddress = null) => {
 
   return rewards;
 };
+
+
+module.exports={
+  isSupportedNetwork,
+  getContractAddress,
+  getSupportedAssets,
+  getBalance,
+  getStaked,
+  deposit,
+  withdraw,
+  withdrawReward,
+  getRewards
+}

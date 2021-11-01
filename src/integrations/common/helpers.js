@@ -1,35 +1,30 @@
-import Web3 from "web3";
-import { getWeb3, getNetwork } from "./web3";
+const Web3 = require("web3");
+const getWeb3 = require("./web3").getWeb3;
+const getNetwork = require("./web3").getNetwork;
 
 // Platform constants
-import { contractAddresses } from "../1inch/constants";
-import {
-  contractAddresses as apeswap,
-  supportedPairs as apeswapPairs,
-} from "../apeswap/constants";
-import { contractAddresses as comp } from "../compound/constants";
-import { contractAddresses as dYdX } from "../dydx/constants";
-import { contractAddresses as keyfi } from "../keyfipool/constants";
-import { contractAddressesv2 as keyfiv2 } from "../keyfipool/constants";
-import {
-  contractAddresses as pancakeswap,
-  supportedPairs as pancakeswapPairs,
-  supportedPairsv2 as pancakeswapPairsv2,
-} from "../pancakeswap/constants";
-import {
-  contractAddresses as uniswap,
-  availablePairs as uniswapPairs,
-} from "../uniswap/constants/constants";
-import { addresses as aave } from "../aave/constants/address";
-import { addresses as aavev2 } from "../aave/constants/constantsv2";
-import { addresses as curve } from "../curve/api";
+const apeswap = require("../apeswap/constants").contractAddresses;
+const apeswapPairs = require("../apeswap/constants").supportedPairs;
+const pancakeswap = require("../pancakeswap/constants").contractAddresses ;
+const pancakeswapPairs = require("../pancakeswap/constants").supportedPairs ;
+const pancakeswapPairsv2 = require("../pancakeswap/constants").supportedPairsv2 ;
+const uniswap = require("../uniswap/constants/constants").contractAddresses ;
+const uniswapPairs = require("../uniswap/constants/constants").availablePairs ;
+const contractAddresses = require("../1inch/constants").contractAddresses;
+const comp = require("../compound/constants").contractAddresses ;
+const dYdX = require("../dydx/constants").contractAddresses ;
+const keyfi = require("../keyfipool/constants").contractAddresses ;
+const keyfiv2 = require("../keyfipool/constants").contractAddressesv2 ;
+const aave = require("../aave/constants/address").addresses ;
+const aavev2 = require("../aave/constants/constantsv2").addresses ;
+const curve= require("../curve/api").addresses;
 
 // Token list
-import ERC20List from "../../tokenLists/tokensListETH1.json";
-import ERC20List2 from "../../tokenLists/tokensListETH2.json";
-import ERC20List3 from "../../tokenLists/tokensListETH3.json";
+const ERC20List = require("../../tokenLists/tokensListETH1.json");
+const ERC20List2 = require("../../tokenLists/tokensListETH2.json");
+const ERC20List3 = require("../../tokenLists/tokensListETH3.json");
 
-export const processWeb3OrNetworkArgument = async (web3OrNetwork) => {
+ const processWeb3OrNetworkArgument = async (web3OrNetwork) => {
   if (!web3OrNetwork) {
     const web3 = await getWeb3();
     return getNetwork(web3);
@@ -42,7 +37,7 @@ export const processWeb3OrNetworkArgument = async (web3OrNetwork) => {
   return getNetwork(web3OrNetwork);
 };
 
-export const makeBatchRequest = async (calls, web3) => {
+ const makeBatchRequest = async (calls, web3) => {
   if (!web3) {
     web3 = await getWeb3();
   }
@@ -67,7 +62,7 @@ export const makeBatchRequest = async (calls, web3) => {
  * @param {number} start Start number.
  * @param {number} end End number.
  */
-export const range = (start, end) => {
+ const range = (start, end) => {
   return Array(end - start + 1)
     .fill()
     .map((_, idx) => start + idx);
@@ -78,7 +73,7 @@ export const range = (start, end) => {
  * @param {string} address Address
  * @return {string} Address with correct capitalization
  */
-export const getAddressSum = (address) => {
+ const getAddressSum = (address) => {
   const web3 = new Web3();
   return web3.utils.toChecksumAddress(address);
 };
@@ -88,7 +83,7 @@ export const getAddressSum = (address) => {
  * @param {string} address Contract address
  * @return {boolean}
  */
-export const isContract = async (address) => {
+ const isContract = async (address) => {
   const web3 = await getWeb3();
   const data = await web3.eth.getCode(address);
   return data !== "0x";
@@ -99,7 +94,7 @@ export const isContract = async (address) => {
  * @param {string} address Contract address
  * @return {string} if contract is used in KeyFi app - returns platform name
  */
-export const getContractPlatform = (address) => {
+ const getContractPlatform = (address) => {
   address = address.toLowerCase();
   if (contractAddresses.mainnet["1inch-exchange"].toLowerCase() === address) {
     return "1inch";
@@ -177,7 +172,7 @@ export const getContractPlatform = (address) => {
   return undefined;
 };
 
-export const getAddress = (symbol) => {
+ const getAddress = (symbol) => {
   symbol = symbol === "ETH" ? "WETH" : symbol;
 
   const tokenList = [
@@ -194,3 +189,13 @@ export const getAddress = (symbol) => {
   }
   return undefined;
 };
+
+module.exports={
+  processWeb3OrNetworkArgument,
+  makeBatchRequest,
+  range,
+  getAddressSum,
+  isContract,
+  getContractPlatform,
+  getAddress
+}

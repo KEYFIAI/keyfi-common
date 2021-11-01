@@ -1,16 +1,23 @@
-import axios from "axios";
+const axios = require("axios");
 
-import {
-  getCurrentAccountAddress,
-  getNetwork,
-  getWeb3,
-  promisifyBatchRequest,
-} from "./web3";
-import { denormalizeAmount } from "./math";
-import { coingeckoAssetsIds, erc20Addresses } from "./constants";
-import erc20Abi from "./erc20.abi.json";
+const getCurrentAccountAddress = require("./web3").getCurrentAccountAddress;
+const getNetwork = require("./web3").getNetwork;
+const {getWeb3} = require("./web3");
+const promisifyBatchRequest = require("./web3").promisifyBatchRequest;
+const denormalizeAmount = require("./math").denormalizeAmount;
+const coingeckoAssetsIds = require("./constants").coingeckoAssetsIds;
+const erc20Addresses = require("./constants").erc20Addresses;
+const erc20Abi = require("./erc20.abi.json");
 
-export const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
+const ZERO_USD_PRICE_TOKENS = [
+  "KEYFI",
+  "KEYFIUSDCLP",
+  "KEYFIBUSD_LP",
+  "KEYFIBUSDLPv2",
+  "KEYFIETH_LP",
+];
+
+const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
   let assetsOrAddresses = assetOrAssets;
   if (typeof assetsOrAddresses === "string") {
     assetsOrAddresses = [assetsOrAddresses];
@@ -75,7 +82,7 @@ export const getBalanceErc20 = async (assetOrAssets, holderAddress = null) => {
   return results;
 };
 
-export const getBalanceEth = async (holderAddress) => {
+const getBalanceEth = async (holderAddress) => {
   const web3 = await getWeb3();
 
   if (!holderAddress) {
@@ -87,15 +94,8 @@ export const getBalanceEth = async (holderAddress) => {
   return denormalizeAmount(network, "ETH", balance);
 };
 
-const ZERO_USD_PRICE_TOKENS = [
-  "KEYFI",
-  "KEYFIUSDCLP",
-  "KEYFIBUSD_LP",
-  "KEYFIBUSDLPv2",
-  "KEYFIETH_LP",
-];
 
-export const getUsdPrice = async (assetOrAssets) => {
+const getUsdPrice = async (assetOrAssets) => {
   let assets = assetOrAssets;
   if (typeof assetOrAssets === "string") {
     assets = [assets];
@@ -141,7 +141,7 @@ export const getUsdPrice = async (assetOrAssets) => {
   }, {});
 };
 
-export const getKeyfiUsdPrice = async (holderAddress) => {
+const getKeyfiUsdPrice = async (holderAddress) => {
   const web3 = await getWeb3();
 
   if (!holderAddress) {
@@ -210,3 +210,10 @@ export const getKeyfiUsdPrice = async (holderAddress) => {
     `Network ${network.name} (chainId ${network.id}) is not supported`
   );
 };
+
+module.exports={
+  getBalanceErc20,
+  getBalanceEth,
+  getUsdPrice,
+  getKeyfiUsdPrice
+}

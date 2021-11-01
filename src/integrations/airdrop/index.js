@@ -1,11 +1,9 @@
-import airdropAbi from './airdrop.abi.json';
-import {
-  getCurrentAccountAddress,
-  getNetwork,
-  getPendingTrxCallback,
-  getTrxOverrides,
-  getWeb3,
-} from '../common';
+const getCurrentAccountAddress = require('../common').getCurrentAccountAddress;
+const getNetwork = require('../common').getNetwork;
+const getPendingTrxCallback = require('../common').getPendingTrxCallback;
+const getTrxOverrides = require('../common').getTrxOverrides;
+const getWeb3 = require('../common').getWeb3;
+const airdropAbi = require('./airdrop.abi.json');
 
 const GAS_LIMIT = 100000;
 const PENDING_CALLBACK_PLATFORM = 'airdrop';
@@ -33,7 +31,7 @@ const getAirdropContract = async (web3) => {
   return new web3.eth.Contract(airdropAbi, contractAddress);
 };
 
-export const claim = async (options = {}) => {
+ const claim = async (options = {}) => {
   const web3 = await getWeb3();
   const airdrop = await getAirdropContract(web3);
   const trxOverrides = getTrxOverrides(options);
@@ -54,8 +52,14 @@ export const claim = async (options = {}) => {
   );
 };
 
-export const airdropsLeft = async () => {
+ const airdropsLeft = async () => {
   const web3 = await getWeb3();
   const airdrop = await getAirdropContract(web3);
   return airdrop.methods.airdropsLeft().call();
 };
+
+
+module.exports={
+  claim,
+  airdropsLeft
+}

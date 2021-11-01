@@ -1,7 +1,7 @@
-import BigNumber from "bignumber.js";
-import { decimals } from "./constants";
+const BigNumber = require("bignumber.js");
+const decimals = require("./constants").decimals;
 
-export const normalizeAmount = (
+ const normalizeAmount = (
   network,
   assetSymbol,
   amount,
@@ -33,9 +33,14 @@ export const normalizeAmount = (
   return newAmount.shiftedBy(currentDecimals).integerValue().toFixed();
 };
 
-export const denormalizeAmount = (
+ const denormalizeAmount = (
   network,
   assetSymbol,
   amount,
   decimalNumber
 ) => normalizeAmount(network, assetSymbol, amount, true, decimalNumber);
+
+module.exports = {
+  normalizeAmount,
+  denormalizeAmount
+}
