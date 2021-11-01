@@ -152,7 +152,7 @@ export const getUserAccountData = async (address = null) => {
   if (userAccount) {
     return {
       availableBorrowsETH,
-      healthFactor: userAccount.health.value || 0,
+      healthFactor: userAccount.health ? userAccount.health.value : "0",
       totalCollateralETH: userAccount.total_borrow_value_in_eth.value,
       totalDebtETH: userAccount.total_borrow_value_in_eth.value,
     };
