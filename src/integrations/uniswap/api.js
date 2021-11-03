@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 
+import { ERC20Tokens } from "../../constants";
 import {
   availablePairs,
   contractAddresses,
@@ -59,6 +60,17 @@ const getContractAddress = async (web3, contractName) => {
     }
   }
 
+  if (
+    ERC20Tokens.find(
+      (token) => token.symbol.toLowerCase() === contractName.toLowerCase()
+    )
+  ) {
+    const token = ERC20Tokens.find(
+      (token) => token.symbol.toLowerCase() === contractName.toLowerCase()
+    );
+    return token.id;
+  }
+
   throw new Error(
     `Unknown contract: '${contractName}' on '${network.name}' network`
   );
@@ -100,8 +112,11 @@ export const isPairAvailable = async (assetA, assetB) => {
     );
   }
 
-  const pairKey = [assetA, assetB].sort().join(":");
-  return availablePairs[network.name].some((x) => x.key === pairKey);
+  return availablePairs[network.name].some(
+    (x) =>
+      (x.assetA === assetA && x.assetB === assetB) ||
+      (x.assetA === assetB && x.assetB === assetA)
+  );
 };
 
 export const getAvailablePairedAssets = async (mainAsset) => {

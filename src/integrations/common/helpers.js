@@ -28,6 +28,7 @@ import { addresses as curve } from "../curve/api";
 import ERC20List from "../../tokenLists/tokensListETH1.json";
 import ERC20List2 from "../../tokenLists/tokensListETH2.json";
 import ERC20List3 from "../../tokenLists/tokensListETH3.json";
+import { ERC20Tokens } from "../../constants";
 
 export const processWeb3OrNetworkArgument = async (web3OrNetwork) => {
   if (!web3OrNetwork) {
@@ -180,17 +181,30 @@ export const getContractPlatform = (address) => {
 export const getAddress = (symbol) => {
   symbol = symbol === "ETH" ? "WETH" : symbol;
 
-  const tokenList = [
-    ...ERC20List.tokens,
-    ...ERC20List2.tokens,
-    ...ERC20List3.tokens,
-  ];
+  const tokenList = ERC20Tokens;
 
   const tokenObject = tokenList.find(
-    (item) => item.symbol === symbol.toUpperCase()
+    (item) => item.symbol.toLowerCase() === symbol.toLowerCase()
   );
   if (tokenObject) {
     return getAddressSum(tokenObject.id);
   }
+  return undefined;
+};
+
+export const getSymbolFromAddress = (address) => {
+  const tokenList = ERC20Tokens;
+
+  if (address === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee") {
+    return "ETH";
+  }
+
+  const tokenObject = tokenList.find(
+    (item) => item.id.toLowerCase() === address.toLowerCase()
+  );
+  if (tokenObject.symbol) {
+    return tokenObject.symbol;
+  }
+
   return undefined;
 };

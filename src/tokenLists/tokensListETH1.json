@@ -1,6 +1,11 @@
 {
   "tokens": [
     {
+      "id": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "decimals": 18,
+      "symbol": "ETH"
+    },
+    {
       "id": "0xB8647e90C0645152Fccf4d9AbB6B59Eb4AA99052",
       "decimals": 18,
       "symbol": "KEYFI"

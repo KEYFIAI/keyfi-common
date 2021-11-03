@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { ERC20Tokens } from "../../constants";
 import { decimals } from "./constants";
 
 export const normalizeAmount = (
@@ -17,7 +18,14 @@ export const normalizeAmount = (
 
   const currentDecimals = decimalNumber
     ? decimalNumber
-    : decimals[network.name][assetSymbol];
+    : decimals[network.name][assetSymbol]
+    ? decimals[network.name][assetSymbol]
+    : Number(
+        ERC20Tokens.find(
+          (token) => token.symbol.toLowerCase() === assetSymbol.toLowerCase()
+        ).decimals
+      );
+
   if (isNaN(currentDecimals)) {
     throw new Error(
       `There is no decimals for currency '${assetSymbol}' on network: ` +

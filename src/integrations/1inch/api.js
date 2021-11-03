@@ -10,7 +10,9 @@ import {
   normalizeAmount,
   denormalizeAmount,
   processWeb3OrNetworkArgument,
+  getSymbolFromAddress,
 } from "../common";
+import { ERC20Tokens } from "@keyfi/keyfi-common";
 
 const DEFAULT_MAX_SLIPPAGE = 0.02;
 const GAS_LIMIT = 1000000;
@@ -28,21 +30,34 @@ export const isSupportedNetwork = async (web3OrNetwork) => {
 const getContractAddress = async (web3, contractName) => {
   const network = await getNetwork(web3);
 
-  if (!await isSupportedNetwork(network)) {
-    throw new Error(`Network with chainId=${network.chainId} is not supported!`);
-  }
-
-  const address = contractAddresses[network.name][contractName];
-  if (!address) {
+  if (!(await isSupportedNetwork(network))) {
     throw new Error(
-      `Unknown contract: '${contractName}' on '${network.name}' network`
+      `Network with chainId=${network.chainId} is not supported!`
     );
   }
 
-  return address;
+  if (contractAddresses[network.name][contractName]) {
+    return contractAddresses[network.name][contractName];
+  }
+  if (
+    ERC20Tokens.find(
+      (token) => token.symbol.toLowerCase() === contractName.toLowerCase()
+    )
+  ) {
+    return ERC20Tokens.find(
+      (token) => token.symbol.toLowerCase() === contractName.toLowerCase()
+    ).id;
+  }
+  throw new Error(
+    `Unknown contract: '${contractName}' on '${network.name}' network`
+  );
 };
 
-export const estimateSwap = async (fromAssetSymbol, fromAmount, toAssetSymbol) => {
+export const estimateSwap = async (
+  fromAssetSymbol,
+  fromAmount,
+  toAssetSymbol
+) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   fromAmount = normalizeAmount(network, fromAssetSymbol, fromAmount);
@@ -57,35 +72,52 @@ export const estimateSwap = async (fromAssetSymbol, fromAmount, toAssetSymbol) =
         fromTokenAddress: fromAssetAddress,
         toTokenAddress: toAssetAddress,
         amount: fromAmount,
-      }
+      },
     });
   } catch (error) {
     const response = error.response;
 
     if (response) {
       throw new Error(
-        `Bad response HTTP code from 1inch API: ${response.status}. `
-        + `Body: ${JSON.stringify(response.data, null, 2)}`
+        `Bad response HTTP code from 1inch API: ${response.status}. ` +
+          `Body: ${JSON.stringify(response.data, null, 2)}`
       );
     }
 
     throw error;
   }
 
-  const { toTokenAmount } = res.data;
+  const { toTokenAmount, protocols } = res.data;
+  const createRoute = () => {
+    return protocols[0].reduce((acc, item, i) => {
+      if (i === 0) {
+        return [
+          getSymbolFromAddress(item[0].fromTokenAddress),
+          getSymbolFromAddress(item[0].toTokenAddress),
+        ];
+      }
+      return [...acc, getSymbolFromAddress(item[0].toTokenAddress)];
+    }, []);
+  };
   return {
     returnAmount: toTokenAmount,
-    returnAmountHuman: denormalizeAmount(network, toAssetSymbol,toTokenAmount),
+    returnAmountHuman: denormalizeAmount(network, toAssetSymbol, toTokenAmount),
+    route: createRoute(),
   };
 };
 
-export const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options = {}) => {
+export const swap = async (
+  fromAssetSymbol,
+  fromAmount,
+  toAssetSymbol,
+  options = {}
+) => {
   const web3 = await getWeb3();
   const network = await getNetwork(web3);
   const fromAmountDecimalized = normalizeAmount(
     network,
     fromAssetSymbol,
-    fromAmount,
+    fromAmount
   );
 
   const trxOverrides = getTrxOverrides(options);
@@ -107,12 +139,14 @@ export const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options =
         pendingCallbackParams: {
           callback: options.pendingCallback,
           platform: PENDING_CALLBACK_PLATFORM,
-          assets: [{
-            symbol: fromAssetSymbol,
-            amount: fromAmount,
-          }],
-        }
-      },
+          assets: [
+            {
+              symbol: fromAssetSymbol,
+              amount: fromAmount,
+            },
+          ],
+        },
+      }
     );
   }
 
@@ -131,15 +165,15 @@ export const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options =
         fromAddress: getCurrentAccountAddress(web3),
         slippage: slippage * 100,
         disableEstimate: options.disableEstimate || false,
-      }
+      },
     });
   } catch (error) {
     const response = error.response;
 
     if (response) {
       throw new Error(
-        `Bad response HTTP code from 1inch API: ${response.status}. `
-        + `Body: ${JSON.stringify(response.data, null, 2)}`
+        `Bad response HTTP code from 1inch API: ${response.status}. ` +
+          `Body: ${JSON.stringify(response.data, null, 2)}`
       );
     }
 
@@ -149,28 +183,31 @@ export const swap = async (fromAssetSymbol, fromAmount, toAssetSymbol, options =
   const trxParams = res.data.tx;
 
   return new Promise((resolve, reject) => {
-    web3.eth.sendTransaction({
-      from: trxParams.from,
-      to: exchangeAddress,
-      data: trxParams.data,
-      value: trxParams.value,
-      gas: GAS_LIMIT,
-      ...trxOverrides,
-    })
-    .once("transactionHash", (hash) => {
-      if (options.pendingCallback) {
-        options.pendingCallback({
-          platform: PENDING_CALLBACK_PLATFORM,
-          type: "swap",
-          assets: [{
-            symbol: fromAssetSymbol,
-            amount: fromAmount,
-          }],
-          hash,
-        });
-      }
-    })
-    .once("receipt", resolve)
-    .once("error", reject);
+    web3.eth
+      .sendTransaction({
+        from: trxParams.from,
+        to: exchangeAddress,
+        data: trxParams.data,
+        value: trxParams.value,
+        gas: GAS_LIMIT,
+        ...trxOverrides,
+      })
+      .once("transactionHash", (hash) => {
+        if (options.pendingCallback) {
+          options.pendingCallback({
+            platform: PENDING_CALLBACK_PLATFORM,
+            type: "swap",
+            assets: [
+              {
+                symbol: fromAssetSymbol,
+                amount: fromAmount,
+              },
+            ],
+            hash,
+          });
+        }
+      })
+      .once("receipt", resolve)
+      .once("error", reject);
   });
 };
