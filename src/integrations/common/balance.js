@@ -88,7 +88,6 @@ export const getBalanceEth = async (holderAddress) => {
 };
 
 const ZERO_USD_PRICE_TOKENS = [
-  "KEYFI",
   "KEYFIUSDCLP",
   "KEYFIBUSD_LP",
   "KEYFIBUSDLPv2",
