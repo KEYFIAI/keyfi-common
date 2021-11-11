@@ -86,10 +86,10 @@ export const getAvailablePairedAssets = async (mainAsset) => {
   }
 
   const paired = supportedPairsv2.reduce((listOfPairedAssets, pair) => {
-    if (pair.token0.symbol.toUpperCase() === mainAsset) {
-      listOfPairedAssets.push(pair.token1.symbol.toUpperCase());
-    } else if (pair.token1.symbol.toUpperCase() === mainAsset) {
-      listOfPairedAssets.push(pair.token0.symbol.toUpperCase());
+    if (pair.token0.symbol.toLowerCase() === mainAsset.toLowerCase()) {
+      listOfPairedAssets.push(pair.token1.symbol);
+    } else if (pair.token1.symbol.toLowerCase() === mainAsset.toLowerCase()) {
+      listOfPairedAssets.push(pair.token0.symbol);
     }
 
     return listOfPairedAssets;
