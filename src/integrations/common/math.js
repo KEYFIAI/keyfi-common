@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { ERC20Tokens } from "../../constants";
+import { ERC20Tokens, BEP20Tokens } from "../../constants";
 import { decimals } from "./constants";
 
 export const normalizeAmount = (
@@ -16,17 +16,25 @@ export const normalizeAmount = (
     );
   }
 
-  const currentDecimals = decimalNumber
-    ? decimalNumber
-    : decimals[network.name][assetSymbol]
-    ? decimals[network.name][assetSymbol]
-    : Number(
-        ERC20Tokens.find(
-          (token) => token.symbol.toLowerCase() === assetSymbol.toLowerCase()
-        ).decimals
-      );
+  const currentDecimals = () => {
+    if (decimalNumber) return decimalNumber;
+    if (decimals[network.name][assetSymbol])
+      return decimals[network.name][assetSymbol];
 
-  if (isNaN(currentDecimals)) {
+    return network.name === "bsc-mainnet"
+      ? Number(
+          BEP20Tokens.find(
+            (token) => token.symbol.toLowerCase() === assetSymbol.toLowerCase()
+          ).decimals
+        )
+      : Number(
+          ERC20Tokens.find(
+            (token) => token.symbol.toLowerCase() === assetSymbol.toLowerCase()
+          ).decimals
+        );
+  };
+
+  if (isNaN(currentDecimals())) {
     throw new Error(
       `There is no decimals for currency '${assetSymbol}' on network: ` +
         `chainId=${network.chainId}, name=${network.name}`
@@ -35,10 +43,10 @@ export const normalizeAmount = (
 
   const newAmount = new BigNumber(amount);
   if (reversed) {
-    return newAmount.shiftedBy(-currentDecimals).toFixed();
+    return newAmount.shiftedBy(-currentDecimals()).toFixed();
   }
 
-  return newAmount.shiftedBy(currentDecimals).integerValue().toFixed();
+  return newAmount.shiftedBy(currentDecimals()).integerValue().toFixed();
 };
 
 export const denormalizeAmount = (

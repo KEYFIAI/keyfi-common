@@ -67,17 +67,11 @@ export const isPairAvailable = async (assetA, assetB) => {
     );
   }
 
-  const [assetAAddress, assetBAddress] = await Promise.all([
-    getAssetAddress(web3, assetA),
-    getAssetAddress(web3, assetB),
-  ]);
-  const pairAddress = await getPairAddress(web3, assetAAddress, assetBAddress);
-
-  const pairIndex = supportedPairsv2.findIndex(
-    (item) => item.id === pairAddress
+  return supportedPairsv2.some(
+    (x) =>
+      (x.assetA === assetA && x.assetB === assetB) ||
+      (x.assetA === assetB && x.assetB === assetA)
   );
-
-  return Boolean(pairIndex >= 0);
 };
 
 export const getAvailablePairedAssets = async (mainAsset) => {
