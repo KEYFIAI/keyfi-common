@@ -277,15 +277,11 @@ export const approveErc20IfNeeded = async (
 let _network = null;
 
 export const getNetwork = async (web3) => {
-  if (_network) {
-    return _network;
-  }
-
   if (!web3) {
     web3 = await getWeb3();
   }
 
-  const chainId = await web3.eth.net.getId();
+  const chainId = await web3.eth.chainId();
 
   let name = networkNames[chainId];
   if (!name) {
