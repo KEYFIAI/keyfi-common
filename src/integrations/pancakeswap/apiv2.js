@@ -67,17 +67,11 @@ export const isPairAvailable = async (assetA, assetB) => {
     );
   }
 
-  const [assetAAddress, assetBAddress] = await Promise.all([
-    getAssetAddress(web3, assetA),
-    getAssetAddress(web3, assetB),
-  ]);
-  const pairAddress = await getPairAddress(web3, assetAAddress, assetBAddress);
-
-  const pairIndex = supportedPairsv2.findIndex(
-    (item) => item.id === pairAddress
+  return supportedPairsv2.some(
+    (x) =>
+      (x.assetA === assetA && x.assetB === assetB) ||
+      (x.assetA === assetB && x.assetB === assetA)
   );
-
-  return Boolean(pairIndex >= 0);
 };
 
 export const getAvailablePairedAssets = async (mainAsset) => {
@@ -92,10 +86,10 @@ export const getAvailablePairedAssets = async (mainAsset) => {
   }
 
   const paired = supportedPairsv2.reduce((listOfPairedAssets, pair) => {
-    if (pair.token0.symbol.toUpperCase() === mainAsset) {
-      listOfPairedAssets.push(pair.token1.symbol.toUpperCase());
-    } else if (pair.token1.symbol.toUpperCase() === mainAsset) {
-      listOfPairedAssets.push(pair.token0.symbol.toUpperCase());
+    if (pair.token0.symbol.toLowerCase() === mainAsset.toLowerCase()) {
+      listOfPairedAssets.push(pair.token1.symbol);
+    } else if (pair.token1.symbol.toLowerCase() === mainAsset.toLowerCase()) {
+      listOfPairedAssets.push(pair.token0.symbol);
     }
 
     return listOfPairedAssets;

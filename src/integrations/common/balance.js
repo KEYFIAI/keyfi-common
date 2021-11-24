@@ -1,4 +1,5 @@
 import axios from "axios";
+import BigNumber from "bignumber.js";
 
 import {
   getCurrentAccountAddress,
@@ -88,7 +89,6 @@ export const getBalanceEth = async (holderAddress) => {
 };
 
 const ZERO_USD_PRICE_TOKENS = [
-  "KEYFI",
   "KEYFIUSDCLP",
   "KEYFIBUSD_LP",
   "KEYFIBUSDLPv2",
@@ -154,56 +154,49 @@ export const getKeyfiUsdPrice = async (holderAddress) => {
     const response = await axios.post(
       "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2",
       {
-        query: `
-        {
-          tokenDayDatas(first: 1, orderBy: date, orderDirection: desc, where: {
-            token: "0xb8647e90c0645152fccf4d9abb6b59eb4aa99052"
-          }) {
-            id date token {
-              id symbol
-            }
-            priceUSD
-          }
-        }
-      `,
+        query: `{
+    pairHourDatas(first: 1, orderBy: hourStartUnix, orderDirection: desc, where: {pair: "0xb99c23a9a444ebeb0ce4a67f27dab8d4826b1108"}) {
+    reserve0
+      reserve1
+    }
+}`,
       }
     );
 
-    const keyfiData = response.data.data.tokenDayDatas[0];
+    const keyfiData = response.data.data.pairHourDatas[0];
 
     if (!keyfiData) {
       throw new Error("Didn't find KEYFI token in graphql query result!");
     }
-
-    return Number.parseFloat(keyfiData.priceUSD, 10);
+    const keyfiPrice = BigNumber(keyfiData.reserve0)
+      .dividedBy(keyfiData.reserve1)
+      .toFixed(5);
+    return keyfiPrice;
   }
 
   if (network.name === "bsc-mainnet" || network.name === "bsc-testnet") {
     const response = await axios.post(
-      "https://graph2.apeswap.finance/subgraphs/name/ape-swap/apeswap-subgraph",
+      "https://bsc.streamingfast.io/subgraphs/name/pancakeswap/exchange-v2",
       {
-        query: `
-        {
-          tokenDayDatas(first: 1, orderBy: date, orderDirection: desc, where: {
-            token: "0x4b6000f9163de2e3f0a01ec37e06e1469dbbce9d"
-          }) {
-            token {
-              id symbol
-            }
-            priceUSD
+        query: `{
+          pairHourDatas(first: 1, orderBy: hourStartUnix, orderDirection: desc, where: {pair: "0xd10321489beb6d3a83e09fa059cf6c8be5a4c542"}) {
+            reserve0
+            reserve1
           }
-        }
-      `,
+        }`,
       }
     );
 
-    const keyfiData = response.data.data.tokenDayDatas[0];
+    const keyfiData = response.data.data.pairHourDatas[0];
 
     if (!keyfiData) {
       throw new Error("Didn't find KEYFI token in graphql query result!");
     }
+    const keyfiPrice = BigNumber(keyfiData.reserve1)
+      .dividedBy(keyfiData.reserve0)
+      .toFixed(5);
 
-    return Number.parseFloat(keyfiData.priceUSD, 10);
+    return keyfiPrice;
   }
 
   return new Error(

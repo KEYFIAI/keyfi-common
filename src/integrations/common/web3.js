@@ -42,9 +42,11 @@ export async function createMetamaskWeb3() {
 
   const web3 = new Web3(window.ethereum);
 
-  await window.ethereum.enable();
+  const accounts = await window.ethereum.request({
+    method: "eth_requestAccounts",
+  });
 
-  web3.eth.defaultAccount = window.ethereum.selectedAddress;
+  web3.eth.defaultAccount = accounts[0];
 
   loadMetamaskEvents();
 

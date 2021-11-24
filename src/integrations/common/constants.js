@@ -604,6 +604,7 @@ export const networkNames = {
 };
 
 export const coingeckoAssetsIds = {
+  KEYFI: "keyfi",
   ETH: "ethereum",
   WETH: "weth",
   CHAI: "chai",

@@ -18,6 +18,7 @@ import {
 import { contractAddresses, supportedPairs } from "./constants";
 import { erc20Addresses } from "../common/constants";
 import { NULL_ADDRESS, PAIR_NOT_EXISTS } from "./constants";
+import { BEP20Tokens } from "../../constants";
 
 const DEFAULT_MAX_SLIPPAGE = 0.005;
 const GAS_LIMIT = 300000;
@@ -40,6 +41,17 @@ export const getContractAddress = async (web3, contractName) => {
 
   if (!(await isSupportedNetwork(network))) {
     throw new Error(`Network with chainId=${network.chainId} is not supported`);
+  }
+
+  if (
+    BEP20Tokens.find(
+      (token) => token.symbol.toLowerCase() === contractName.toLowerCase()
+    )
+  ) {
+    const token = BEP20Tokens.find(
+      (token) => token.symbol.toLowerCase() === contractName.toLowerCase()
+    );
+    return token.id;
   }
 
   const address = contractAddresses[network.name][contractName];
@@ -604,7 +616,7 @@ export const addLiquidity = async (
   options = {}
 ) => {
   if (assetA === assetB) {
-    throw Error(`Both assets are equal`);
+    throw Error("Both assets are equal");
   }
 
   if (assetB === "BNB") {
@@ -754,7 +766,7 @@ export const removeLiquidity = async (
   options = {}
 ) => {
   if (assetA === assetB) {
-    throw Error(`Both assets are identical`);
+    throw Error("Both assets are identical");
   }
 
   if (assetB === "BNB") {
