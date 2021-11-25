@@ -69,8 +69,8 @@ export const isPairAvailable = async (assetA, assetB) => {
 
   return supportedPairsv2.some(
     (x) =>
-      (x.assetA === assetA && x.assetB === assetB) ||
-      (x.assetA === assetB && x.assetB === assetA)
+      (x.token0.symbol === assetA && x.token1.symbol === assetB) ||
+      (x.token0.symbol === assetB && x.token1.symbol === assetA)
   );
 };
 

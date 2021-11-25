@@ -2,6 +2,11 @@
   "tokens": [
     {
       "decimals": "18",
+      "id": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "symbol": "BNB"
+    },
+    {
+      "decimals": "18",
       "id": "0x4b6000f9163de2e3f0a01ec37e06e1469dbbce9d",
       "symbol": "KEYFI"
     },
