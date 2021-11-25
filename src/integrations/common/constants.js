@@ -600,7 +600,7 @@ export const networkNames = {
   42: "kovan",
   56: "bsc-mainnet",
   97: "bsc-testnet",
-  137: "matic",
+  137: "polygon",
 };
 
 export const coingeckoAssetsIds = {
