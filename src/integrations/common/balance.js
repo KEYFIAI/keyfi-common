@@ -114,7 +114,7 @@ export const getUsdPrice = async (assetOrAssets) => {
 
     const usdPrice = assetData && assetData.current_price;
 
-    priceList[asset.symbol] = usdPrice;
+    priceList[asset] = usdPrice;
   });
 
   return priceList;
