@@ -101,44 +101,23 @@ export const getUsdPrice = async (assetOrAssets) => {
     assets = [assets];
   }
 
-  assets = assets.map((symbol) => {
-    const coingeckoId = coingeckoAssetsIds[symbol] || null;
-
-    if (!coingeckoId && !ZERO_USD_PRICE_TOKENS.includes(symbol)) {
-      throw new Error(`Asset is not supported: '${symbol}'`);
-    }
-
-    return {
-      symbol,
-      coingeckoId,
-    };
-  });
-
-  const response = await axios.get(
-    `https://api.coingecko.com/api/v3/simple/price?ids=${assets
-      .map((x) => x.coingeckoId)
-      .filter((x) => x)
-      .join(",")}&vs_currencies=usd`
+  const { data } = await axios.get(
+    "https://curated-coingecko-historical.s3.ap-southeast-1.amazonaws.com/latest.json"
   );
 
-  assets.forEach((asset) => {
-    const { coingeckoId } = asset;
+  const priceList = {};
 
-    if (coingeckoId) {
-      asset.usdPrice = response.data[coingeckoId]?.usd;
-    } else {
-      asset.usdPrice = 0;
-    }
+  assets.forEach((asset) => {
+    const assetData = data.find(
+      (x) => asset && x.symbol === asset.toLowerCase()
+    );
+
+    const usdPrice = assetData && assetData.current_price;
+
+    priceList[asset.symbol] = usdPrice;
   });
 
-  if (typeof assetOrAssets === "string") {
-    return assets[0].usdPrice;
-  }
-
-  return assets.reduce((acc, asset) => {
-    acc[asset.symbol] = asset.usdPrice;
-    return acc;
-  }, {});
+  return priceList;
 };
 
 export const getKeyfiUsdPrice = async (holderAddress) => {
