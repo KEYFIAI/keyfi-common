@@ -103,16 +103,16 @@ export const getStaked = async (accountAddress, onlyForLP = false) => {
   if (network.chainId === 56) {
     if (onlyForLP) {
       balance = {
-        KEYFIBUSD_LP: balance["KEYFIBUSD_LP"],
-        KEYFIBUSDLPv2: balance["KEYFIBUSDLPv2"],
+        "KEYFI:BUSD": balance["KEYFI:BUSD"],
+        "KEYFI:BUSD v2": balance["KEYFI:BUSD v2"],
       };
     }
-    if (BigNumber(balance.KEYFIBUSD_LP).gt(0)) {
-      const pairBalance = balance.KEYFIBUSD_LP;
-      delete balance["KEYFIBUSD_LP"];
+    if (BigNumber(balance["KEYFI:BUSD"]).gt(0)) {
+      const pairBalance = balance["KEYFI:BUSD"];
+      delete balance["KEYFI:BUSD"];
 
       const pair = await getAccountLiquidityBSC("BUSD", "KEYFI", null, {
-        balance: normalizeAmount(network, "KEYFIBUSD_LP", pairBalance),
+        balance: normalizeAmount(network, "KEYFI:BUSD", pairBalance),
       });
 
       balance.KEYFI = BigNumber(balance.KEYFI ? balance.KEYFI : 0)
@@ -122,12 +122,12 @@ export const getStaked = async (accountAddress, onlyForLP = false) => {
         .plus(pair.BUSD)
         .toFixed();
     }
-    if (BigNumber(balance.KEYFIBUSDLPv2).gt(0)) {
-      const pairBalance = balance.KEYFIBUSDLPv2;
-      delete balance["KEYFIBUSDLPv2"];
+    if (BigNumber(balance["KEYFI:BUSD v2"]).gt(0)) {
+      const pairBalance = balance["KEYFI:BUSD v2"];
+      delete balance["KEYFI:BUSD v2"];
 
       const pair = await v2.getAccountLiquidity("BUSD", "KEYFI", null, {
-        balance: normalizeAmount(network, "KEYFIBUSDLPv2", pairBalance),
+        balance: normalizeAmount(network, "KEYFI:BUSD v2", pairBalance),
       });
 
       balance.KEYFI = BigNumber(balance.KEYFI ? balance.KEYFI : 0)
@@ -140,16 +140,16 @@ export const getStaked = async (accountAddress, onlyForLP = false) => {
   } else {
     if (onlyForLP) {
       balance = {
-        KEYFIUSDCLP: balance["KEYFIUSDCLP"],
+        "KEYFI:USDC": balance["KEYFI:USDC"],
       };
     }
 
-    if (BigNumber(balance.KEYFIUSDCLP).gt(0)) {
-      const pairBalance = balance.KEYFIUSDCLP;
-      delete balance["KEYFIUSDCLP"];
+    if (BigNumber(balance["KEYFI:USDC"]).gt(0)) {
+      const pairBalance = balance["KEYFI:USDC"];
+      delete balance["KEYFI:USDC"];
 
       const pair = await getAccountLiquidity("USDC", "KEYFI", null, {
-        balance: normalizeAmount(network, "KEYFIUSDCLP", pairBalance),
+        balance: normalizeAmount(network, "KEYFI:USDC", pairBalance),
       });
 
       balance.KEYFI = BigNumber(balance.KEYFI ? balance.KEYFI : 0)

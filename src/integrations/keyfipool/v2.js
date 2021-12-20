@@ -100,16 +100,16 @@ export const getStakedv2 = async (accountAddress, onlyForLP = false) => {
 
   if (onlyForLP) {
     balance = {
-      KEYFIETH_LP: balance["KEYFIETH_LP"],
+      "KEYFI:ETH": balance["KEYFI:ETH"],
     };
   }
 
-  if (BigNumber(balance.KEYFIETH_LP).gt(0)) {
-    const pairBalance = balance.KEYFIETH_LP;
-    delete balance["KEYFIETH_LP"];
+  if (BigNumber(balance["KEYFI:ETH"]).gt(0)) {
+    const pairBalance = balance["KEYFI:ETH"];
+    delete balance["KEYFI:ETH"];
 
     const pair = await getAccountLiquidity("ETH", "KEYFI", null, {
-      balance: normalizeAmount(network, "KEYFIETH_LP", pairBalance),
+      balance: normalizeAmount(network, "KEYFI:ETH", pairBalance),
     });
 
     balance.KEYFI = BigNumber(balance.KEYFI ? balance.KEYFI : 0)
