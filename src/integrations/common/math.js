@@ -1,6 +1,12 @@
 import BigNumber from "bignumber.js";
-import { ERC20Tokens, BEP20Tokens } from "../../constants";
+import { ERC20Tokens, BEP20Tokens, PolygonTokens } from "../../constants";
 import { decimals } from "./constants";
+
+const networkLists = {
+  "bsc-mainnet": BEP20Tokens,
+  mainnet: ERC20Tokens,
+  polygon: PolygonTokens,
+};
 
 export const normalizeAmount = (
   network,
@@ -9,29 +15,18 @@ export const normalizeAmount = (
   reversed = false,
   decimalNumber
 ) => {
-  if (!decimals[network.name]) {
-    throw new Error(
-      `There is no decimals for network chainId=${network.chainId}` +
-        `, name='${network.name}'`
-    );
-  }
-
   const currentDecimals = () => {
     if (decimalNumber) return decimalNumber;
     if (decimals[network.name][assetSymbol])
       return decimals[network.name][assetSymbol];
 
-    return network.name === "bsc-mainnet"
+    return networkLists[network.name]
       ? Number(
-          BEP20Tokens.find(
+          networkLists[network.name].find(
             (token) => token.symbol.toLowerCase() === assetSymbol.toLowerCase()
           ).decimals
         )
-      : Number(
-          ERC20Tokens.find(
-            (token) => token.symbol.toLowerCase() === assetSymbol.toLowerCase()
-          ).decimals
-        );
+      : null;
   };
 
   if (isNaN(currentDecimals())) {

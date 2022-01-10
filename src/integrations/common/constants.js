@@ -592,6 +592,7 @@ export const decimals = {
     UNI: 18,
     XOR: 18,
   },
+  polygon: {},
 };
 
 export const networkNames = {

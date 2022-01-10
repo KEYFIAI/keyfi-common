@@ -22,6 +22,10 @@ export const contractAddresses = {
     wBNB: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
     USDC: "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
   },
+  polygon: {
+    RewardPool: "0xBeA9dDeDDEe8b2Eb08BeF3d5028E5a8466404e6a",
+    KEYFI: "0x24e21FF7e150F4FBf2fE573D9849a20d3acCf307",
+  },
 };
 
 export const contractAddressesv2 = {

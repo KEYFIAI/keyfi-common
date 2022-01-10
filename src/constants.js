@@ -5,6 +5,8 @@ import ETHList3 from "./tokenLists/tokensListETH3.json";
 import BEP20List1 from "./tokenLists/tokensListBSC1.json";
 import BEP20List2 from "./tokenLists/tokensListBSC2.json";
 
+import PolygonList from "./tokenLists/tokensListPolygon.json";
+
 export const WalletProviderId = {
   Infura: "Infura",
   Metamask: "Metamask",
@@ -20,3 +22,5 @@ export const ERC20Tokens = [
 ];
 
 export const BEP20Tokens = [...BEP20List1.tokens, ...BEP20List2.tokens];
+
+export const PolygonTokens = [...PolygonList.tokens];
