@@ -23,8 +23,8 @@ export const contractAddresses = {
     USDC: "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
   },
   polygon: {
-    RewardPool: "0xBeA9dDeDDEe8b2Eb08BeF3d5028E5a8466404e6a",
-    KEYFI: "0x24e21FF7e150F4FBf2fE573D9849a20d3acCf307",
+    RewardPool: "0xb6fd1c810e6CBDb0751383B3C768464077CDADcA",
+    KEYFI: "0xD1A5f2A049343fc4D5F8d478f734eBa51B22375E",
   },
 };
 
