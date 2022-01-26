@@ -602,6 +602,11 @@ export const networkNames = {
   56: "bsc-mainnet",
   97: "bsc-testnet",
   137: "polygon",
+  43114: "avalanche",
+  250: "fantom",
+  42161: "arbitrum",
+  10: "optimism",
+  25: "cronos",
 };
 
 export const coingeckoAssetsIds = {
