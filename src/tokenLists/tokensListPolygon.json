@@ -1,6 +1,11 @@
 {
   "tokens": [
     {
+      "id": "0x0000000000000000000000000000000000000000",
+      "symbol": "MATIC",
+      "decimals": "18"
+    },
+    {
       "id": "0xD1A5f2A049343fc4D5F8d478f734eBa51B22375E",
       "symbol": "KEYFI",
       "decimals": "18"
