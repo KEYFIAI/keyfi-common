@@ -607,6 +607,13 @@ export const networkNames = {
   42161: "arbitrum",
   10: "optimism",
   25: "cronos",
+  1088: "metis",
+  1285: "moonriver",
+  1284: "moonbeam",
+  40: "telos",
+  321: "kcc",
+  1313161554: "aurora",
+  66: "okex",
 };
 
 export const coingeckoAssetsIds = {
