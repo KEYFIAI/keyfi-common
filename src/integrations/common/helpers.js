@@ -213,3 +213,63 @@ export const getSymbolFromAddress = (address) => {
 
   return undefined;
 };
+
+function avg(arr) {
+  const sum = arr.reduce((a, v) => a + v);
+  return Math.round(sum / arr.length);
+}
+
+export async function getFees(web3, historicalBlocks = 4) {
+  try {
+    const result = await web3.eth.getFeeHistory(
+      historicalBlocks,
+      "pending",
+      [25, 50, 75]
+    );
+
+    let blockNum = parseInt(result.oldestBlock, 16);
+    let index = 0;
+    const blocks = [];
+    while (blockNum < parseInt(result.oldestBlock, 16) + historicalBlocks) {
+      blocks.push({
+        number: blockNum,
+        baseFeePerGas: Number(result.baseFeePerGas[index]),
+        gasUsedRatio: Number(result.gasUsedRatio[index]),
+        priorityFeePerGas: result.reward[index].map((x) => Number(x)),
+      });
+      blockNum += 1;
+      index += 1;
+    }
+
+    const slow = avg(blocks.map((b) => b.priorityFeePerGas[0]));
+    const average = avg(blocks.map((b) => b.priorityFeePerGas[1]));
+    const fast = avg(blocks.map((b) => b.priorityFeePerGas[2]));
+
+    const pendingBlock = await web3.eth.getBlock("pending");
+
+    const baseFeePerGas = Number(pendingBlock.baseFeePerGas);
+
+    return {
+      slow: slow + baseFeePerGas,
+      average: average + baseFeePerGas,
+      fast: fast + baseFeePerGas,
+    };
+  } catch (err) {
+    return {
+      slow: 5000000000,
+      average: 5000000000,
+      fast: 5000000000,
+    };
+  }
+}
+
+export const formatTxConfig = (network, fees, txOverride = {}) => {
+  if (network.chainId === 56) {
+    return { ...txOverride, gasPrice: fees.average };
+  }
+  return {
+    maxPriorityFeePerGas: fees.average,
+    maxFeePerGas: fees.average,
+    ...txOverride,
+  };
+};

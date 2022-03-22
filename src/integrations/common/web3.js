@@ -231,36 +231,19 @@ export const approveErc20IfNeeded = async (
   );
 
   const notEnough = allowance.lt(amount);
-  const notZero = allowance.gt(0);
 
   const { pendingCallbackParams } = options;
 
   if (notEnough) {
-    if (notZero) {
-      // Set approved amount to 0 first
-      await erc20Contract.methods.approve(receiver, 0).send(
-        {
-          from: getCurrentAccountAddress(web3),
-          ...trxOverrides,
-        },
-        pendingCallbackParams
-          ? getPendingTrxCallback(pendingCallbackParams.callback, {
-              platform: pendingCallbackParams.platform,
-              type: "approve reset",
-              assets: pendingCallbackParams.assets.map((assetInfo) => ({
-                symbol: assetInfo.symbol,
-                amount: 0,
-              })),
-            })
-          : // We need to provide any function as callback or web3 will fail with:
-            // Error: "No 'from' address specified..."
-            () => {}
-      );
-    }
-
+    const estimateGas = await erc20Contract.methods
+      .approve(receiver, amount)
+      .estimateGas({
+        from: web3.eth.defaultAccount,
+      });
     return erc20Contract.methods.approve(receiver, amount).send(
       {
         from: getCurrentAccountAddress(web3),
+        gas: BigNumber(estimateGas).times(1.01).toFixed(0),
         ...trxOverrides,
       },
       pendingCallbackParams

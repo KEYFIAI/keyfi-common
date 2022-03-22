@@ -11,10 +11,11 @@ import {
   normalizeAmount,
   denormalizeAmount,
   processWeb3OrNetworkArgument,
+  getFees,
+  formatTxConfig,
 } from "../common";
 import { getAccountLiquidity } from "../uniswap";
 
-const GAS_LIMIT = 250000;
 const PENDING_CALLBACK_PLATFORM = "keyfi rewardpool";
 
 const isSupportedNetwork = async (web3OrNetwork) => {
@@ -138,10 +139,7 @@ export const depositv2 = async (asset, amount, options = {}) => {
     assetAddress,
     poolAddress,
     nAmount,
-    {
-      gas: GAS_LIMIT,
-      ...trxOverrides,
-    },
+    {},
     {
       pendingCallbackParams: {
         callback: options.pendingCallback,
@@ -156,11 +154,13 @@ export const depositv2 = async (asset, amount, options = {}) => {
     }
   );
 
+  const fees = await getFees(web3, 20);
+  const txConfig = formatTxConfig(network, fees, trxOverrides);
+
   return poolContract.methods.deposit(assetAddress, nAmount).send(
     {
       from: getCurrentAccountAddress(web3),
-      gas: GAS_LIMIT,
-      ...trxOverrides,
+      ...txConfig,
       nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
     },
     getPendingTrxCallback(options.pendingCallback, {
@@ -186,11 +186,13 @@ export const withdrawv2 = async (asset, amount, options = {}) => {
   const poolContract = new web3.eth.Contract(rewardPoolAbi.abi, poolAddress);
   const trxOverrides = getTrxOverrides(options);
 
+  const fees = await getFees(web3, 20);
+  const txConfig = formatTxConfig(network, fees, trxOverrides);
+
   return poolContract.methods.withdraw(assetAddress, nAmount).send(
     {
       from: getCurrentAccountAddress(web3),
-      gas: GAS_LIMIT,
-      ...trxOverrides,
+      ...txConfig,
       nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
     },
     getPendingTrxCallback(options.pendingCallback, {
@@ -208,6 +210,7 @@ export const withdrawv2 = async (asset, amount, options = {}) => {
 
 export const withdrawRewardv2 = async (asset, options = {}) => {
   const web3 = await getWeb3();
+  const network = await getNetwork(web3);
 
   const assetAddress = await getContractAddress(web3, asset);
   const poolAddress = await getContractAddress(web3, "RewardPool");
@@ -218,10 +221,7 @@ export const withdrawRewardv2 = async (asset, options = {}) => {
     web3,
     assetAddress,
     poolAddress,
-    {
-      gas: GAS_LIMIT,
-      ...trxOverrides,
-    },
+    {},
     {
       pendingCallbackParams: {
         callback: options.pendingCallback,
@@ -234,12 +234,13 @@ export const withdrawRewardv2 = async (asset, options = {}) => {
       },
     }
   );
+  const fees = await getFees(web3, 20);
+  const txConfig = formatTxConfig(network, fees, trxOverrides);
 
   return poolContract.methods.withdrawRewards(assetAddress).send(
     {
       from: getCurrentAccountAddress(web3),
-      gas: GAS_LIMIT,
-      ...trxOverrides,
+      ...txConfig,
       nonce: trxOverrides.nonce ? trxOverrides.nonce + 1 : undefined,
     },
     getPendingTrxCallback(options.pendingCallback, {
