@@ -6,6 +6,7 @@ import Erc20Abi from "./erc20.abi.json";
 import { WalletProviderId } from "../../constants";
 import { loadMetamaskEvents, loadWalletConnectEvents } from "./web3Events";
 import { isMobile } from "../../utils";
+import { formatTxConfig, getFees } from ".";
 
 export const createWeb3InNodeJS = () => {
   const ethereumNodeUrl = process.env.ETHEREUM_HTTP_PROVIDER;
@@ -235,15 +236,14 @@ export const approveErc20IfNeeded = async (
   const { pendingCallbackParams } = options;
 
   if (notEnough) {
-    const estimateGas = await erc20Contract.methods
-      .approve(receiver, amount)
-      .estimateGas({
-        from: web3.eth.defaultAccount,
-      });
+    const fees = await getFees(web3, 20);
+    const network = await getNetwork(web3);
+    const txConfig = formatTxConfig(network.chainId, fees, trxOverrides);
+
     return erc20Contract.methods.approve(receiver, amount).send(
       {
         from: getCurrentAccountAddress(web3),
-        gas: BigNumber(estimateGas).times(1.01).toFixed(0),
+        ...txConfig,
         ...trxOverrides,
       },
       pendingCallbackParams
